@@ -663,14 +663,16 @@ document.querySelectorAll('.blur-in').forEach(el => blurObs.observe(el));
       'about-p2': "Начал с Python, ушёл глубоко в C, C++ и системное программирование. Сейчас создаю <strong>full-stack продукты с нуля — один.</strong> Параллельно: кибербезопасность и этичный хакинг — понимаю как системы ломаются, чтобы строить те, которые не сломаются.",
       'tag-0': 'Full-Stack', 'tag-1': 'C++ / Системы', 'tag-2': 'Этичный Хакинг', 'tag-3': 'CTF Игрок', 'tag-4': 'ИИ Разработчик', 'tag-5': 'Мобильная разработка',
       'skill-cat-0': 'Языки', 'skill-cat-1': 'Фронтенд', 'skill-cat-2': 'Бэкенд', 'skill-cat-3': 'Облако и Инструменты', 'skill-cat-4': 'ИИ и API', 'skill-cat-5': 'Кибербезопасность',
-      'proj-desc-0': 'ИИ-платформа для торговли криптой и акциями. Графики в стиле TradingView, P&L календарь, анализ рынка через Gemini AI, интеграция с брокерами, бумажная торговля и PWA. Развёрнут на GitHub Pages.',
-      'proj-desc-1': 'Полноценное Flutter-приложение для заказа еды в столовой. Firebase бэкенд, Riverpod, push-уведомления, панель администратора, корзина и отслеживание заказов в реальном времени.',
-      'proj-desc-2': 'Pixel-perfect люксовый fashion e-commerce. Типографика Playfair Display, каталог товаров, панель администратора, оформление заказа. Чистый HTML/CSS/JS — без зависимостей.',
-      'proj-desc-3': 'ИИ-бот для торговых сигналов в Telegram. Анализ рынка через OpenAI, обработка аудио/видео через FFmpeg, работает 24/7 на VPS. Умная генерация сигналов для трейдеров.',
-      'proj-desc-4': 'Современный необнаруживаемый VPN на VLESS + Reality (Xray-core). Трафик маскируется под обычный HTTPS — полностью обходит DPI-цензуру. Автоматическая настройка сервера.',
-      'proj-desc-5': 'CRM-система для реального бизнеса. Управление клиентами, отслеживание сделок, современный фронтенд. Создана как замена дорогим SaaS-инструментам.',
-      'proj-desc-6': 'Полноценная платформа для микроблогинга на Flask. Авторизация, посты, подписки, SQLAlchemy ORM, миграции БД, поддержка email. Продакшн-архитектура.',
-      'proj-desc-7': 'Telegram-бот с Flask вебхуками и логированием в PostgreSQL. Хелс-чек, структурированная работа с БД, запускается через uv.',
+      'proj-desc-0': 'Маркетплейс аккаунтов для игр и Steam в Таджикистане — от и до сделал один. Защищённые эскроу-сделки между покупателем и продавцом без посредника, дашборды продавца и покупателя для управления объявлениями. Next.js со статическим экспортом на бэкенде Supabase, развёрнут на GitHub Pages.',
+      'proj-desc-1': 'ИИ-платформа для торговли криптой и акциями. Графики в стиле TradingView, P&L календарь, анализ рынка через Gemini AI, интеграция с брокерами, бумажная торговля и PWA.',
+      'proj-desc-2': 'Pixel-perfect люксовый fashion e-commerce с нуля — чистый HTML, CSS и JavaScript, без единой зависимости. Типографика Playfair Display, полный каталог товаров, панель администратора, оформление заказа и бэкенд на Supabase для синхронизации корзины между устройствами.',
+      'proj-desc-3': 'Система заказа еды в университетской столовой — два клиента на одном бэкенде Supabase: мобильное приложение на Expo/React Native и веб-клиент на Capacitor. Меню, бонусы, корзина и отслеживание заказов в реальном времени.',
+      'proj-desc-4': 'Система учёта склада пиломатериалов: остатки по породам и сечениям в реальном времени, закупочные и продажные цены, журнал сделок, текущая прибыль. React, TypeScript, Vite, Tailwind CSS, CI/CD на GitHub Actions.',
+      'proj-desc-5': 'Концепт и прототип платформы единого абонемента в залы: один абонемент — доступ в любой зал-партнёр. Проработана бизнес-модель — тарифы, выплаты залам за визит, B2B-доступ для компаний — на основе реального анализа рынка и цен, затем сделаны лендинг и интерактивный прототип приложения.',
+      'proj-desc-6': 'Быстрый одностраничный сайт кампуса — чистый HTML, CSS и JavaScript без зависимостей, заточен под мгновенную загрузку и понятный интерфейс.',
+      'proj-desc-7': 'ИИ-бот для торговых сигналов в Telegram. Анализ рынка через OpenAI API, обработка аудио и видео через FFmpeg, работает 24/7 на VPS с логированием и health-check.',
+      'proj-desc-8': 'Самостоятельное исследование мирового рынка кибербезопасности: объём и прогнозы роста по регионам, переход от периметровой защиты к data-centric резилентности, бизнес-архитектуры и технические парадигмы, меняющие индустрию до 2030 года.',
+      'proj-desc-9': 'Исследование операционных моделей private equity в Центральной Азии: геополитический контекст, регуляторная среда от национальных кодексов до AIFC, стратегия создания стоимости в портфельных компаниях под ESG-мандатами.',
       'contact-cta': "Давай создадим<br><span class='contact__cta-accent'>что-то реальное.</span>",
       'contact-label-0': 'Email', 'contact-label-1': 'LinkedIn', 'contact-label-2': 'Telegram',
       'footer-credit': 'Создано без ограничений.',
@@ -809,5 +811,25 @@ document.querySelectorAll('.blur-in').forEach(el => blurObs.observe(el));
   btn.addEventListener('click', () => {
     lang = lang === 'en' ? 'ru' : 'en';
     applyLang(lang);
+    dismissLangHint();
   });
+
+  // First-time nudge: show a tooltip + pulsing dot pointing at the
+  // language switch so new visitors realize it's clickable, then never
+  // bother them with it again once they've discovered it.
+  const tip = document.getElementById('langTip');
+  const dot = btn.querySelector('.nav__lang-dot');
+  function dismissLangHint() {
+    if (tip) tip.classList.remove('is-visible');
+    if (dot) dot.classList.add('is-hidden');
+    try { localStorage.setItem('langHintSeen', '1'); } catch (e) {}
+  }
+  try {
+    if (!localStorage.getItem('langHintSeen') && tip) {
+      setTimeout(() => tip.classList.add('is-visible'), 1400);
+      setTimeout(dismissLangHint, 6000);
+    } else if (dot) {
+      dot.classList.add('is-hidden');
+    }
+  } catch (e) {}
 })();
