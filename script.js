@@ -811,23 +811,30 @@ document.querySelectorAll('.blur-in').forEach(el => blurObs.observe(el));
   btn.addEventListener('click', () => {
     lang = lang === 'en' ? 'ru' : 'en';
     applyLang(lang);
-    dismissLangHint();
+    markLangHintSeen();
   });
 
   // First-time nudge: show a tooltip + pulsing dot pointing at the
-  // language switch so new visitors realize it's clickable, then never
-  // bother them with it again once they've discovered it.
+  // language switch so new visitors realize it's clickable. The bubble
+  // fades on its own, but the pulsing dot keeps coming back on every
+  // visit until they've actually clicked the button once — a missed
+  // tooltip shouldn't silently kill the hint forever.
   const tip = document.getElementById('langTip');
   const dot = btn.querySelector('.nav__lang-dot');
-  function dismissLangHint() {
+  function hideLangTip() {
     if (tip) tip.classList.remove('is-visible');
+  }
+  function markLangHintSeen() {
+    hideLangTip();
     if (dot) dot.classList.add('is-hidden');
     try { localStorage.setItem('langHintSeen', '1'); } catch (e) {}
   }
   try {
-    if (!localStorage.getItem('langHintSeen') && tip) {
-      setTimeout(() => tip.classList.add('is-visible'), 1400);
-      setTimeout(dismissLangHint, 6000);
+    if (!localStorage.getItem('langHintSeen')) {
+      if (tip) {
+        setTimeout(() => tip.classList.add('is-visible'), 700);
+        setTimeout(hideLangTip, 7000);
+      }
     } else if (dot) {
       dot.classList.add('is-hidden');
     }
