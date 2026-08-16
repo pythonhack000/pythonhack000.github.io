@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEKHA — Full-Stack Developer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- SCROLL PROGRESS -->
+  <div id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- PRELOADER -->
+  <div id="preloader" aria-hidden="true">
+    <div class="pre__num mono" id="preNum">000</div>
+    <div class="pre__bar"><div class="pre__bar-fill" id="preBarFill"></div></div>
+    <div class="pre__label mono">Loading</div>
+  </div>
+
+  <!-- CURSOR -->
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+  <div id="cursor-label"></div>
+
+  <!-- SPOTLIGHT -->
+  <div id="spotlight" aria-hidden="true"></div>
+
+  <!-- PARTICLE CANVAS -->
+  <canvas id="particleCanvas" aria-hidden="true"></canvas>
+
+  <!-- NOISE OVERLAY -->
+  <div class="noise"></div>
+
+  <!-- SCANLINES -->
+  <div class="scanlines"></div>
+
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <a href="#" class="nav__logo">BEKHA<span class="dot">.</span></a>
+    <ul class="nav__links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav__lang" id="langToggle" aria-label="Switch language">
+      <span id="langCurrent">EN</span>
+    </button>
+    <button class="nav__toggle" id="navToggle" aria-label="menu">
+      <span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- MOBILE DRAWER -->
+  <div class="drawer" id="drawer">
+    <a href="#about" class="drawer__link">About</a>
+    <a href="#work" class="drawer__link">Work</a>
+    <a href="#skills" class="drawer__link">Skills</a>
+    <a href="#contact" class="drawer__link">Contact</a>
+  </div>
+
+  <!-- ====== HERO ====== -->
+  <section class="hero" id="home">
+    <div class="hero__top">
+      <span class="label" id="typewriterLabel"></span>
+      <span class="hero__status"><span class="status-dot"></span>Available for projects</span>
+    </div>
+
+    <div class="hero__name-wrap">
+      <h1 class="hero__name" id="heroName" aria-label="BEKHA">
+        <span class="char" data-char="B">B</span><span class="char" data-char="E">E</span><span class="char" data-char="K">K</span><span class="char" data-char="H">H</span><span class="char" data-char="A">A</span>
+      </h1>
+      <div class="hero__pixel-block" aria-hidden="true"></div>
+      <!-- Geometric 3D element inspired by CSS-Tricks -->
+      <div class="hero__geometric" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero__bottom">
+      <p class="hero__desc" id="heroDesc">
+        I design and ship <strong>real products</strong> — AI platforms,<br>
+        mobile apps, e-commerce, bots. Solo. Fast.
+      </p>
+      <div class="hero__actions">
+        <a href="#work" class="btn btn--primary magnetic" data-strength="40">
+          <span>See my work</span>
+        </a>
+        <a href="#contact" class="btn btn--outline magnetic" data-strength="30">
+          <span>Let's talk</span>
+        </a>
+      </div>
+      <div class="hero__meta">
+        <div class="meta-item">
+          <span class="meta-num counter" data-target="10">0</span>
+          <span class="meta-label">Projects shipped</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-num counter" data-target="4">0</span>
+          <span class="meta-label">Languages</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-num meta-num--inf">∞</span>
+          <span class="meta-label">Ideas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__scroll-hint" id="scrollHint" aria-hidden="true">
+      <div class="scroll-mouse">
+        <div class="scroll-mouse__wheel"></div>
+      </div>
+      <span class="mono scroll-hint-text">scroll down</span>
+    </div>
+  </section>
+
+  <!-- ====== MARQUEE ====== -->
+  <div class="marquee-wrap" aria-hidden="true">
+    <div class="marquee">
+      <div class="marquee__inner">
+        <span>Python</span><span class="sep">—</span>
+        <span>C++</span><span class="sep">—</span>
+        <span>TypeScript</span><span class="sep">—</span>
+        <span>React</span><span class="sep">—</span>
+        <span>Flutter</span><span class="sep">—</span>
+        <span>Flask</span><span class="sep">—</span>
+        <span>Firebase</span><span class="sep">—</span>
+        <span>OpenAI</span><span class="sep">—</span>
+        <span>Kali Linux</span><span class="sep">—</span>
+        <span>Burp Suite</span><span class="sep">—</span>
+        <span>Wireshark</span><span class="sep">—</span>
+        <span>CTF</span><span class="sep">—</span>
+        <span>WebSockets</span><span class="sep">—</span>
+        <span>PostgreSQL</span><span class="sep">—</span>
+        <span>Dart</span><span class="sep">—</span>
+        <span>Vite</span><span class="sep">—</span>
+        <span>PWA</span><span class="sep">—</span>
+        <span>Networking</span><span class="sep">—</span>
+
+        <!-- duplicate for seamless loop -->
+        <span>Python</span><span class="sep">—</span>
+        <span>C++</span><span class="sep">—</span>
+        <span>TypeScript</span><span class="sep">—</span>
+        <span>React</span><span class="sep">—</span>
+        <span>Flutter</span><span class="sep">—</span>
+        <span>Flask</span><span class="sep">—</span>
+        <span>Firebase</span><span class="sep">—</span>
+        <span>OpenAI</span><span class="sep">—</span>
+        <span>Kali Linux</span><span class="sep">—</span>
+        <span>Burp Suite</span><span class="sep">—</span>
+        <span>Wireshark</span><span class="sep">—</span>
+        <span>CTF</span><span class="sep">—</span>
+        <span>WebSockets</span><span class="sep">—</span>
+        <span>PostgreSQL</span><span class="sep">—</span>
+        <span>Dart</span><span class="sep">—</span>
+        <span>Vite</span><span class="sep">—</span>
+        <span>PWA</span><span class="sep">—</span>
+        <span>Networking</span><span class="sep">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== ABOUT ====== -->
+  <section class="section about" id="about">
+    <span class="section__bg-text" aria-hidden="true">ABOUT</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">01</span>
+        <span class="label">About</span>
+      </div>
+
+      <div class="about__layout">
+        <div class="about__left reveal">
+          <h2 class="section__title">Who I<br>Am</h2>
+        </div>
+        <div class="about__right">
+          <p class="about__p blur-in">
+            I'm Bekha — a self-driven developer who builds things people actually use.
+            Whether it's an AI trading assistant, a Flutter app for ordering lunch,
+            or a luxury fashion store, I care about the full picture:
+            <em>design, performance, and product thinking.</em>
+          </p>
+          <p class="about__p blur-in">
+            Started with Python, went deep into React, TypeScript, and Flutter.
+            Now I ship <strong>full-stack products from scratch — solo.</strong>
+            On the other side: I'm into cybersecurity and ethical hacking —
+            understanding how systems break so I can build ones that don't.
+          </p>
+
+          <div class="about__tags reveal">
+            <span class="tag">Full-Stack</span>
+            <span class="tag">C++ / Systems</span>
+            <span class="tag">Ethical Hacking</span>
+            <span class="tag">CTF Player</span>
+            <span class="tag">AI Builder</span>
+            <span class="tag">Mobile Dev</span>
+          </div>
+
+          <div class="code-block reveal">
+            <div class="code-block__bar">
+              <span class="cb-dot r"></span>
+              <span class="cb-dot y"></span>
+              <span class="cb-dot g"></span>
+              <span class="cb-file mono">bekha.ts</span>
+            </div>
+            <pre class="code-block__body mono"><code><span class="c-kw">const</span> bekha = {
+  name:    <span class="c-str">"Bekha"</span>,
+  github:  <span class="c-str">"pythonhack000"</span>,
+  stack:   [<span class="c-str">"Python"</span>, <span class="c-str">"C"</span>, <span class="c-str">"C++"</span>],
+  into:    [<span class="c-str">"Ethical Hacking"</span>, <span class="c-str">"CTF"</span>, <span class="c-str">"AI"</span>, <span class="c-str">"Products"</span>],
+  tools:   [<span class="c-str">"Kali Linux"</span>, <span class="c-str">"Wireshark"</span>, <span class="c-str">"Burp Suite"</span>],
+  ships:   <span class="c-bool">true</span>,
+};</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== WORK ====== -->
+  <section class="section work" id="work">
+    <span class="section__bg-text" aria-hidden="true">WORK</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">02</span>
+        <span class="label">Work</span>
+      </div>
+      <h2 class="section__title reveal">Selected<br>Projects</h2>
+
+      <div class="projects-list">
+
+        <article class="project reveal" data-index="01">
+          <div class="project__head">
+            <div class="project__num mono">01</div>
+            <h3 class="project__title">AccBozor — Account Marketplace</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/bozor/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/bozor" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Marketplace for game and Steam accounts, built for Tajikistan. Escrow-protected P2P deals,
+              manual payment confirmation flow, seller/buyer dashboards. Next.js static export on a Supabase backend.
+            </p>
+            <div class="project__stack">
+              <span>Next.js</span><span>TypeScript</span><span>Supabase</span><span>Escrow</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="02">
+          <div class="project__head">
+            <div class="project__num mono">02</div>
+            <h3 class="project__title">TradeVision AI</h3>
+            <div class="project__links">
+              <a href="https://sabrsf001.github.io/tradevision/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/sabrsf001/tradevision" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              AI-powered crypto and stock trading platform. TradingView-style charting, P&L calendar journal,
+              Gemini AI market analysis, broker integration, paper trading, and PWA support.
+            </p>
+            <div class="project__stack">
+              <span>React</span><span>TypeScript</span><span>Vite</span><span>Gemini AI</span><span>PWA</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="03">
+          <div class="project__head">
+            <div class="project__num mono">03</div>
+            <h3 class="project__title">bysabr — Luxury Fashion Store</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/bysabr-shop/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/bysabr-shop" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Pixel-perfect luxury fashion e-commerce. Playfair Display typography, product catalog,
+              admin panel, checkout flow, Supabase backend for cross-device sync. Premium minimal aesthetic.
+            </p>
+            <div class="project__stack">
+              <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Supabase</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="04">
+          <div class="project__head">
+            <div class="project__num mono">04</div>
+            <h3 class="project__title">Smart Canteen</h3>
+            <div class="project__links">
+              <a href="https://github.com/pythonhack000/canteen-mobile" target="_blank" class="project__link">Mobile</a>
+              <a href="https://github.com/pythonhack000/canteen-web" target="_blank" class="project__link">Web</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              University canteen ordering system — Expo mobile app plus a Capacitor-wrapped web client.
+              Menu browsing, bonuses, real-time order tracking, Supabase backend shared across both.
+            </p>
+            <div class="project__stack">
+              <span>Expo</span><span>React Native</span><span>React</span><span>Capacitor</span><span>Supabase</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="05">
+          <div class="project__head">
+            <div class="project__num mono">05</div>
+            <h3 class="project__title">Takhtabozor</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/takhtabozor/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/takhtabozor" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Local marketplace web app. React + TypeScript SPA on Vite, Tailwind-driven UI,
+              built for speed on a lean component architecture.
+            </p>
+            <div class="project__stack">
+              <span>React</span><span>TypeScript</span><span>Vite</span><span>Tailwind</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="06">
+          <div class="project__head">
+            <div class="project__num mono">06</div>
+            <h3 class="project__title">FLEX — Gym Access Platform</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/gym/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/gym" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Pay-per-visit gym subscription platform concept — one membership, access to multiple gyms.
+              Product landing page plus an interactive app prototype, backed by full market and pricing research.
+            </p>
+            <div class="project__stack">
+              <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Product Design</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="07">
+          <div class="project__head">
+            <div class="project__num mono">07</div>
+            <h3 class="project__title">DII Campus</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/dii-campus/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/dii-campus" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Single-page campus site — clean layout, fast load, zero dependencies.
+              Pure HTML/CSS/JS.
+            </p>
+            <div class="project__stack">
+              <span>HTML</span><span>CSS</span><span>JavaScript</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="08">
+          <div class="project__head">
+            <div class="project__num mono">08</div>
+            <h3 class="project__title">TradeSignal AI Bot</h3>
+            <div class="project__links">
+              <span class="project__link project__link--dim">Telegram</span>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              AI-powered Telegram trading signals bot. Real-time market analysis via OpenAI,
+              audio/video processing with FFmpeg, runs 24/7 on VPS.
+              Smart signal generation for traders.
+            </p>
+            <div class="project__stack">
+              <span>Python</span><span>OpenAI</span><span>Telegram API</span><span>FFmpeg</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="09">
+          <div class="project__head">
+            <div class="project__num mono">09</div>
+            <h3 class="project__title">Cybersecurity Market Research</h3>
+            <div class="project__links">
+              <span class="project__link project__link--dim">Research</span>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Deep-dive sector analysis of the global cybersecurity market 2025–2030 —
+              market sizing, regional breakdowns, business architectures, technical paradigms.
+            </p>
+            <div class="project__stack">
+              <span>Market Analysis</span><span>Cybersecurity</span><span>Business Strategy</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="10">
+          <div class="project__head">
+            <div class="project__num mono">10</div>
+            <h3 class="project__title">Private Equity — Central Asia</h3>
+            <div class="project__links">
+              <span class="project__link project__link--dim">Research</span>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Operational and investment framework for private equity across Central Asia —
+              geopolitical context, regulatory landscape, and portfolio value-creation strategy.
+            </p>
+            <div class="project__stack">
+              <span>Private Equity</span><span>Market Analysis</span><span>Central Asia</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SKILLS ====== -->
+  <section class="section skills" id="skills">
+    <span class="section__bg-text" aria-hidden="true">SKILLS</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">03</span>
+        <span class="label">Skills</span>
+      </div>
+      <h2 class="section__title reveal">My Arsenal</h2>
+
+      <div class="skills-grid">
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Languages</h3>
+          <ul class="skill-cat__list">
+            <li>Python</li>
+            <li>C</li>
+            <li>C++</li>
+            <li>JavaScript</li>
+            <li>Dart</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Frontend</h3>
+          <ul class="skill-cat__list">
+            <li>React</li>
+            <li>Flutter</li>
+            <li>Vite</li>
+            <li>HTML / CSS</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Backend</h3>
+          <ul class="skill-cat__list">
+            <li>Flask</li>
+            <li>REST APIs</li>
+            <li>PostgreSQL</li>
+            <li>SQLAlchemy</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Cloud &amp; Tools</h3>
+          <ul class="skill-cat__list">
+            <li>Firebase</li>
+            <li>GitHub Actions</li>
+            <li>VPS / Linux</li>
+            <li>Git</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">AI &amp; APIs</h3>
+          <ul class="skill-cat__list">
+            <li>OpenAI API</li>
+            <li>Gemini API</li>
+            <li>Telegram Bot API</li>
+            <li>WebSockets</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat skill-cat--cyber reveal">
+          <h3 class="skill-cat__name mono">Cybersecurity</h3>
+          <ul class="skill-cat__list">
+            <li>Ethical Hacking</li>
+            <li>Kali Linux</li>
+            <li>Burp Suite</li>
+            <li>Wireshark</li>
+            <li>Nmap / Ncat</li>
+            <li>CTF / OSINT</li>
+            <li>DPI Bypass</li>
+            <li>Network Security</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== CONTACT ====== -->
+  <section class="section contact" id="contact">
+    <span class="section__bg-text" aria-hidden="true">CONTACT</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">04</span>
+        <span class="label">Contact</span>
+      </div>
+
+      <div class="contact__big reveal">
+        <h2 class="contact__cta">Let's build<br><span class="contact__cta-accent">something real.</span></h2>
+      </div>
+
+      <div class="contact__row reveal">
+        <div class="contact-item contact-item--copy magnetic" data-copy="pythonhack000@gmail.com" data-strength="20" style="cursor:none;">
+          <span class="contact-item__label mono">Email</span>
+          <span class="contact-item__val">pythonhack000@gmail.com</span>
+          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </div>
+        <a href="https://www.linkedin.com/in/behruz-nabizoda-669491238/" target="_blank" class="contact-item magnetic" data-strength="20">
+          <span class="contact-item__label mono">LinkedIn</span>
+          <span class="contact-item__val">LinkedIn</span>
+          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </a>
+        <a href="https://t.me/sabrsf0" target="_blank" class="contact-item magnetic" data-strength="20">
+          <span class="contact-item__label mono">Telegram</span>
+          <span class="contact-item__val">@sabrsf0</span>
+          <svg class="co is itntact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <span class="mono">BEKHA — 2026</span>
+        <span class="mono footer__clock" id="liveClock"></span>
+        <span class="mono footer__credit">Built without limits.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BACK TO TOP -->
+  <button id="backToTop" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  </button>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- CURSOR TRAIL -->
+  <div id="cursorTrail"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
