@@ -1019,6 +1019,11 @@ body::before {
   .nav__toggle { display: flex; }
   .nav__logo { font-size: 0.85rem; }
   .nav__lang { padding: 6px 12px; font-size: 0.65rem; }
+  /* .nav__links normally pushes lang/toggle to the right via margin:0 auto —
+     with it hidden on mobile, push the right-side cluster to the corner
+     ourselves, with breathing room between the lang switch and the toggle */
+  .nav__lang-wrap { margin-left: auto; }
+  .nav__toggle { margin-left: 16px; }
   
   /* Drawer */
   .drawer { display: flex; width: 100%; padding: 80px 24px 40px; }
