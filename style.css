@@ -1103,6 +1103,10 @@ body::before {
   .contact-item { padding: 16px; flex-direction: row; align-items: center; gap: 12px; flex-wrap: wrap; }
   .contact-item__label { font-size: 0.75rem; min-width: auto; }
   .contact-item__value { font-size: 0.85rem; }
+  /* the arrow/copy icon is absolutely positioned at desktop offsets (top:32/right:36)
+     tuned for the tall desktop card — on the compact mobile row that floats it away
+     from the text, so fold it back into the flex row instead */
+  .contact-item__arrow { position: static; margin-left: auto; flex-shrink: 0; }
   
   /* Footer */
   .footer { padding: 32px 24px; }
