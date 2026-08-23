@@ -752,7 +752,8 @@ body::before {
   z-index: 0;
   pointer-events: none;
 }
-.project:hover::before { transform: scaleX(1); }
+.project:hover::before,
+.project.is-open::before { transform: scaleX(1); }
 
 /* shine/glare follows cursor inside card */
 .project::after {
@@ -804,7 +805,8 @@ body::before {
   max-height: 0; overflow: hidden;
   transition: max-height 0.5s var(--ease), padding 0.3s;
 }
-.project:hover .project__body {
+.project:hover .project__body,
+.project.is-open .project__body {
   max-height: 200px;
   padding-top: 16px;
 }
@@ -1076,7 +1078,8 @@ body::before {
   .project__links { flex-wrap: wrap; gap: 8px; }
   .project__link { padding: 5px 10px; font-size: 0.65rem; }
   .project__body { padding: 12px 0 0 0; }
-  .project:hover .project__body { max-height: 300px; padding-top: 12px; }
+  .project:hover .project__body,
+  .project.is-open .project__body { max-height: 300px; padding-top: 12px; }
   
   /* Contact */
   .contact__row { grid-template-columns: 1fr; }
@@ -1114,6 +1117,7 @@ body::before {
     .magnetic { position: static !important; transform: none !important; }
     .project:hover::after { opacity: 0; }
     a, button { cursor: pointer; }
+    .project__head { cursor: pointer; }
   }
 }
 
