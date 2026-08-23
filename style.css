@@ -40,6 +40,7 @@
   pointer-events: auto;
 }
 #backToTop:hover { background: var(--purple2); }
+body:has(.drawer.open) #backToTop { opacity: 0; visibility: hidden; pointer-events: none; }
 #backToTop svg { width: 20px; height: 20px; stroke: #fff; display: block; }
 
 /* ===== TOAST ===== */
@@ -681,6 +682,7 @@ body::before {
   display: grid; grid-template-columns: 280px 1fr;
   gap: 80px; align-items: start;
 }
+.about__left, .about__right { min-width: 0; }
 .about__left .section__title { margin-bottom: 0; }
 .about__p {
   font-size: 1rem; color: var(--white2); line-height: 1.85;
@@ -1022,7 +1024,7 @@ body::before {
   .drawer__link { font-size: 1.2rem; padding: 16px 0; }
   
   /* Hero Section */
-  .hero { padding: 100px 24px 40px; }
+  .hero { padding: 100px 24px 40px; min-height: auto; justify-content: flex-start; gap: 56px; }
   .hero__name { font-size: clamp(3.5rem, 20vw, 8rem); white-space: normal; letter-spacing: -0.02em; }
   .hero__name .char { animation: none; transform: translateY(0); }
   .hero__pixel-block { width: clamp(30px, 4vw, 50px); height: clamp(30px, 4vw, 50px); margin-left: 8px; }
@@ -1093,12 +1095,14 @@ body::before {
   .footer__inner { flex-direction: column; gap: 12px; text-align: center; }
   .footer__inner span { font-size: 0.65rem; }
   
-  /* Back to top */
+  /* Back to top — left side on mobile so it doesn't sit on top of
+     right-aligned links (project LIVE/GITHUB, contact rows) */
   #backToTop {
-    bottom: 24px;
-    right: 24px;
-    width: 40px;
-    height: 40px;
+    bottom: 20px;
+    left: 16px;
+    right: auto;
+    width: 36px;
+    height: 36px;
   }
   #backToTop svg { width: 16px; height: 16px; }
   
