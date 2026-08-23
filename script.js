@@ -332,6 +332,16 @@ document.querySelectorAll('.project').forEach(p => {
   });
 });
 
+// ===== TAP TO EXPAND PROJECT (touch devices have no :hover) =====
+document.querySelectorAll('.project').forEach(p => {
+  const head = p.querySelector('.project__head');
+  if (!head) return;
+  head.addEventListener('click', e => {
+    if (e.target.closest('.project__link')) return;
+    p.classList.toggle('is-open');
+  });
+});
+
 // update cursor-label position alongside cursor-ring
 const _spotlight = document.getElementById('spotlight');
 let _spotTX = -600, _spotTY = -600, _spotCX = -600, _spotCY = -600;
