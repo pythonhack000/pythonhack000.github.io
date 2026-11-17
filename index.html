@@ -1,581 +1,261 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BEKHA — Full-Stack Developer</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=3"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bekha — full-stack developer in Dushanbe</title>
+<meta name="description" content="Bekha builds and ships web apps, mobile apps, Telegram bots and AI tools from Dushanbe. Type help in the terminal.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bekha — full-stack developer in Dushanbe">
+<meta property="og:description" content="Web apps, mobile apps, bots and AI tools, built and shipped solo.">
+<meta property="og:image" content="https://pythonhack000.github.io/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0f0a03">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Pixelify+Sans:wght@400;500&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20">
+<script>
+  try {
+    if (sessionStorage.getItem('seen')) document.documentElement.classList.add('seen');
+    var t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t;
+    if (!sessionStorage.getItem('intro') && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('intro-on', 'seen');
+  } catch (e) { /* storage blocked: show the intro, default theme */ }
+</script>
 </head>
 <body>
+<div class="intro" id="intro" aria-hidden="true">
+  <canvas></canvas>
+  <pre class="intro__log"></pre>
+  <p class="intro__lock"></p>
+  <div class="intro__title"><p class="intro__name"></p><p class="intro__sub"></p></div>
+  <p class="intro__skip" data-i18n="introSkip">press any key to skip</p>
+</div>
+<div class="power" aria-hidden="true"></div>
+<div class="src" aria-hidden="true"><pre class="src__dim" id="srcDim"></pre><pre class="src__lit" id="srcLit"></pre></div>
+<a class="skip" href="#work" data-i18n="skip">Skip to projects</a>
 
-  <!-- SCROLL PROGRESS -->
-  <div id="scrollProgress" aria-hidden="true"></div>
-
-  <!-- PRELOADER -->
-  <div id="preloader" aria-hidden="true">
-    <div class="pre__num mono" id="preNum">000</div>
-    <div class="pre__bar"><div class="pre__bar-fill" id="preBarFill"></div></div>
-    <div class="pre__label mono">Loading</div>
-  </div>
-
-  <!-- CURSOR -->
-  <div id="cursor"></div>
-  <div id="cursor-ring"></div>
-  <div id="cursor-label"></div>
-
-  <!-- SPOTLIGHT -->
-  <div id="spotlight" aria-hidden="true"></div>
-
-  <!-- PARTICLE CANVAS -->
-  <canvas id="particleCanvas" aria-hidden="true"></canvas>
-
-  <!-- NOISE OVERLAY -->
-  <div class="noise"></div>
-
-  <!-- SCANLINES -->
-  <div class="scanlines"></div>
-
-  <!-- NAV -->
-  <nav class="nav" id="nav">
-    <a href="#" class="nav__logo">BEKHA<span class="dot">.</span></a>
-    <ul class="nav__links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#work">Work</a></li>
-      <li><a href="#skills">Skills</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ul>
-    <div class="nav__lang-wrap">
-      <button class="nav__lang" id="langToggle" aria-label="Switch language">
-        <span id="langCurrent">EN</span>
-        <span class="nav__lang-dot" aria-hidden="true"></span>
-      </button>
-      <span class="nav__lang-tip" id="langTip">RU / EN</span>
-    </div>
-    <button class="nav__toggle" id="navToggle" aria-label="menu">
-      <span></span><span></span>
-    </button>
+<header class="bar">
+  <a class="bar__home" href="#top">bekha@dushanbe:~$</a>
+  <nav class="bar__nav" aria-label="Main">
+    <a href="#work">./work</a>
+    <a href="#whoami">./whoami</a>
+    <a href="#contact">./contact</a>
   </nav>
+  <p class="bar__prog" id="prog" aria-hidden="true">[--------------------]   0%</p>
+  <button type="button" class="bar__lang" id="langBtn">EN / ru</button>
+  <button type="button" class="bar__sound" id="soundBtn" aria-pressed="false">sound: off</button>
+  <p class="bar__status"><span class="led" aria-hidden="true"></span><span data-i18n="status">open to new projects</span></p>
+</header>
 
-  <!-- MOBILE DRAWER -->
-  <div class="drawer" id="drawer">
-    <a href="#about" class="drawer__link">About</a>
-    <a href="#work" class="drawer__link">Work</a>
-    <a href="#skills" class="drawer__link">Skills</a>
-    <a href="#contact" class="drawer__link">Contact</a>
-  </div>
-
-  <!-- ====== HERO ====== -->
-  <section class="hero" id="home">
-    <div class="hero__top">
-      <span class="label" id="typewriterLabel"></span>
-      <span class="hero__status"><span class="status-dot"></span>Available for projects</span>
+<main id="top">
+  <!-- HERO: the terminal -->
+  <section class="hero" aria-labelledby="name">
+    <div class="hero__grid">
+      <div class="hero__copy">
+        <p class="prompt"><span class="prompt__ps">$</span> whoami</p>
+        <h1 id="name" class="name" data-i18n="name" data-text="BEKHA">BEKHA</h1>
+        <p class="lead" data-i18n="lead">Full-stack developer in Dushanbe. I build and ship web apps, mobile apps, Telegram bots and AI tools on my own, from the first commit to the live server.</p>
+        <dl class="facts">
+          <div><dt data-i18n="factShipped">shipped</dt><dd data-i18n="factShippedV">10 projects</dd></div>
+          <div><dt data-i18n="factGithub">on github</dt><dd data-i18n="factGithubV">since 2021</dd></div>
+          <div><dt data-i18n="factOff">off hours</dt><dd data-i18n="factOffV">CTF and OSINT</dd></div>
+        </dl>
+      </div>
+      <figure class="torus" aria-hidden="true">
+        <canvas id="globe" class="moon" width="440" height="440"></canvas>
+      </figure>
     </div>
 
-    <div class="hero__name-wrap">
-      <h1 class="hero__name" id="heroName" aria-label="BEKHA">
-        <span class="char" data-char="B">B</span><span class="char" data-char="E">E</span><span class="char" data-char="K">K</span><span class="char" data-char="H">H</span><span class="char" data-char="A">A</span>
-      </h1>
-      <div class="hero__pixel-block" aria-hidden="true"></div>
-      <!-- Geometric 3D element inspired by CSS-Tricks -->
-      <div class="hero__geometric" aria-hidden="true"></div>
-    </div>
-
-    <div class="hero__bottom">
-      <p class="hero__desc" id="heroDesc">
-        I design and ship <strong>real products</strong> — AI platforms,<br>
-        mobile apps, e-commerce, bots. Solo. Fast.
-      </p>
-      <div class="hero__actions">
-        <a href="#work" class="btn btn--primary magnetic" data-strength="40">
-          <span>See my work</span>
-        </a>
-        <a href="#contact" class="btn btn--outline magnetic" data-strength="30">
-          <span>Let's talk</span>
-        </a>
-      </div>
-      <div class="hero__meta">
-        <div class="meta-item">
-          <span class="meta-num counter" data-target="10">0</span>
-          <span class="meta-label">Projects shipped</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-num counter" data-target="4">0</span>
-          <span class="meta-label">Languages</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-num meta-num--inf">∞</span>
-          <span class="meta-label">Ideas</span>
+    <div class="term" id="term">
+      <div class="term__bar">
+        <span class="term__title" id="termTitle">tty1  bekha@dushanbe:~</span>
+        <div class="term__btns">
+          <button type="button" data-win="min" aria-label="Minimise the terminal" aria-pressed="false">_</button>
+          <button type="button" data-win="max" aria-label="Full-screen terminal" aria-pressed="false">[ ]</button>
+          <button type="button" data-win="close" aria-label="Close the terminal">x</button>
         </div>
       </div>
-    </div>
-
-    <div class="hero__scroll-hint" id="scrollHint" aria-hidden="true">
-      <div class="scroll-mouse">
-        <div class="scroll-mouse__wheel"></div>
+      <div class="term__body">
+        <div class="term__out" id="termOut" role="log" aria-live="polite" aria-label="Terminal output"></div>
+        <form class="term__line" id="termForm" autocomplete="off">
+          <label class="term__ps" id="termPs" for="termIn">bekha@dushanbe:~$</label>
+          <input id="termIn" class="term__in" type="text" spellcheck="false" autocapitalize="off" aria-describedby="termHint">
+          <span class="term__hint" id="termHint"><span data-i18n="hintA">type</span> <kbd>help</kbd> <span data-i18n="hintB">and press enter</span></span>
+        </form>
       </div>
-      <span class="mono scroll-hint-text">scroll down</span>
+      <button type="button" class="term__respawn" id="termRespawn" hidden>[process exited with code 0]  respawn the shell</button>
     </div>
   </section>
 
-  <!-- ====== MARQUEE ====== -->
-  <div class="marquee-wrap" aria-hidden="true">
-    <div class="marquee">
-      <div class="marquee__inner">
-        <span>Python</span><span class="sep">—</span>
-        <span>C++</span><span class="sep">—</span>
-        <span>TypeScript</span><span class="sep">—</span>
-        <span>React</span><span class="sep">—</span>
-        <span>Flutter</span><span class="sep">—</span>
-        <span>Flask</span><span class="sep">—</span>
-        <span>Firebase</span><span class="sep">—</span>
-        <span>OpenAI</span><span class="sep">—</span>
-        <span>Kali Linux</span><span class="sep">—</span>
-        <span>Burp Suite</span><span class="sep">—</span>
-        <span>Wireshark</span><span class="sep">—</span>
-        <span>CTF</span><span class="sep">—</span>
-        <span>WebSockets</span><span class="sep">—</span>
-        <span>PostgreSQL</span><span class="sep">—</span>
-        <span>Dart</span><span class="sep">—</span>
-        <span>Vite</span><span class="sep">—</span>
-        <span>PWA</span><span class="sep">—</span>
-        <span>Networking</span><span class="sep">—</span>
+  <!-- WORK: nmap output -->
+  <section class="work" id="work" aria-labelledby="work-h">
+    <p class="cmd"><span class="prompt__ps">$</span> nmap -sV --open bekha/work</p>
+    <h2 id="work-h" class="h2" data-i18n="workH" data-text="">9 open ports. Each one is a product I shipped.</h2>
+    <p class="uptime" id="uptime"><span class="led" aria-hidden="true"></span><span id="uptimeText" data-i18n="uptimeWait">uptime check runs when you scroll here</span></p>
+    <p class="work-hint" data-i18n="workHint">click a port to boot the live project right here, in a window. cmd+click opens a tab.</p>
 
-        <!-- duplicate for seamless loop -->
-        <span>Python</span><span class="sep">—</span>
-        <span>C++</span><span class="sep">—</span>
-        <span>TypeScript</span><span class="sep">—</span>
-        <span>React</span><span class="sep">—</span>
-        <span>Flutter</span><span class="sep">—</span>
-        <span>Flask</span><span class="sep">—</span>
-        <span>Firebase</span><span class="sep">—</span>
-        <span>OpenAI</span><span class="sep">—</span>
-        <span>Kali Linux</span><span class="sep">—</span>
-        <span>Burp Suite</span><span class="sep">—</span>
-        <span>Wireshark</span><span class="sep">—</span>
-        <span>CTF</span><span class="sep">—</span>
-        <span>WebSockets</span><span class="sep">—</span>
-        <span>PostgreSQL</span><span class="sep">—</span>
-        <span>Dart</span><span class="sep">—</span>
-        <span>Vite</span><span class="sep">—</span>
-        <span>PWA</span><span class="sep">—</span>
-        <span>Networking</span><span class="sep">—</span>
+    <div class="scan">
+      <div class="scan__head" aria-hidden="true">
+        <span>port</span><span>state</span><span>service</span><span>version</span>
+      </div>
+      <ol class="scan__rows" id="scanRows">
+        <li class="row is-on" data-shot="img/work-lunar.jpg" data-alt="Lunar Site Navigator: candidate landing sites glowing on the Moon's south pole">
+          <a class="row__link" href="https://pythonhack000.github.io/lunar-navigator/">
+            <span class="row__port">1969/tcp</span><span class="row__state">open</span>
+            <span class="row__name">lunar-navigator</span>
+            <span class="row__ver" data-i18n="rowLunar">NASA Space Apps 2026, team Swarm. A 3D Moon that finds landing sites at the south pole by sunlight and line of sight to Earth, on NASA LRO terrain. React, three.js.</span>
+          </a>
+        </li>
+        <li class="row" data-shot="img/work-tradevision.jpg" data-alt="TRADEBOARD: a daily Bitcoin chart with drawing tools">
+          <a class="row__link" href="https://pythonhack000.github.io/tradevision/">
+            <span class="row__port">443/tcp</span><span class="row__state">open</span>
+            <span class="row__name">tradeboard</span>
+            <span class="row__ver" data-i18n="rowTrade">AI draws trendlines and zones on a live chart while it explains them. React, TypeScript, four AI providers.</span>
+          </a>
+        </li>
+        <li class="row" data-shot="img/work-bozor-hero.jpg" data-alt="AccBozor: a marketplace for game accounts">
+          <a class="row__link" href="https://pythonhack000.github.io/bozor/">
+            <span class="row__port">8080/tcp</span><span class="row__state">open</span>
+            <span class="row__name">accbozor</span>
+            <span class="row__ver" data-i18n="rowBozor">Game and Steam account marketplace for Tajikistan. Escrow holds the money until the buyer confirms. Next.js, Supabase.</span>
+          </a>
+        </li>
+        <li class="row" data-shot="img/work-gym.jpg" data-alt="FLEX: one membership for many gyms in Dushanbe">
+          <a class="row__link" href="https://pythonhack000.github.io/gym/">
+            <span class="row__port">3000/tcp</span><span class="row__state">open</span>
+            <span class="row__name">flex</span>
+            <span class="row__ver" data-i18n="rowFlex">One pay-per-visit pass for gyms across Dushanbe. Landing page, clickable app and the pricing research behind it.</span>
+          </a>
+        </li>
+        <li class="row" data-shot="img/work-takhtabozor.jpg" data-alt="Takhtabozor: stock and debts for a timber yard">
+          <a class="row__link" href="https://pythonhack000.github.io/takhtabozor/">
+            <span class="row__port">5173/tcp</span><span class="row__state">open</span>
+            <span class="row__name">takhtabozor</span>
+            <span class="row__ver" data-i18n="rowTakhta">Stock, sales and customer debts for a timber yard, counted in somoni. React, Vite, Tailwind.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="BYSABR" data-alt="bysabr">
+          <a class="row__link" href="https://pythonhack000.github.io/bysabr-shop/">
+            <span class="row__port">4242/tcp</span><span class="row__state">open</span>
+            <span class="row__name">bysabr</span>
+            <span class="row__ver" data-i18n="rowSabr">Fashion store with catalog, checkout and an admin panel that syncs across devices. JavaScript, Supabase.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="CANTEEN" data-alt="Smart Canteen">
+          <a class="row__link" href="https://github.com/pythonhack000/canteen-mobile">
+            <span class="row__port">19000/tcp</span><span class="row__state">open</span>
+            <span class="row__name">smart-canteen</span>
+            <span class="row__ver" data-i18n="rowCanteen">Lunch ordering app for a university canteen, with bonuses and live order status. Expo, React Native, Supabase.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="SIGNAL" data-alt="TradeSignal bot">
+          <div class="row__link" tabindex="0">
+            <span class="row__port">8443/tcp</span><span class="row__state">open</span>
+            <span class="row__name">tradesignal-bot</span>
+            <span class="row__ver" data-i18n="rowSignal">Telegram bot that reads the market with OpenAI and runs around the clock on a VPS. Python, FFmpeg.</span>
+          </div>
+        </li>
+        <li class="row" data-ascii="DII" data-alt="DII Campus">
+          <a class="row__link" href="https://pythonhack000.github.io/dii-campus/">
+            <span class="row__port">80/tcp</span><span class="row__state">open</span>
+            <span class="row__name">dii-campus</span>
+            <span class="row__ver" data-i18n="rowDii">Student app for my university. Plain HTML, CSS and JavaScript, no dependencies.</span>
+          </a>
+        </li>
+      </ol>
+
+      <figure class="screen" aria-live="polite">
+        <div class="screen__crt">
+          <img id="shot" src="img/work-lunar.jpg" alt="Lunar Site Navigator: candidate landing sites glowing on the Moon's south pole" width="1312" height="820">
+          <pre id="shotAscii" class="screen__ascii" hidden></pre>
+        </div>
+        <figcaption><span id="shotCap">1969/tcp  lunar-navigator</span><span id="ping" class="ping"></span></figcaption>
+      </figure>
+    </div>
+    <p class="done" data-i18n="scanDone">Nmap done: 9 hosts up, 0 filtered. Scan took 5 years.</p>
+  </section>
+
+  <!-- WHOAMI: neofetch -->
+  <section class="who" id="whoami" aria-labelledby="who-h">
+    <p class="cmd"><span class="prompt__ps">$</span> neofetch</p>
+    <h2 id="who-h" class="sr">About Bekha</h2>
+    <div class="neo">
+<div class="neo__left">
+<pre class="neo__art" aria-hidden="true">
+              /\
+             /  \        /\
+       /\   / /\ \  /\  /  \
+      /  \ / /  \ \/  \/ /\ \
+     / /\ V /    \  /\  /  \ \
+    / /  \ /  /\  \/  \/ /\ \ \
+   /_/ /\ \  /  \  \  / /  \ \_\
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</pre>
+<p class="neo__cap" data-i18n="neoArt">93% mountains. 100% online.</p>
+</div>
+      <div class="neo__info">
+        <p class="neo__user">bekha<span>@</span>dushanbe</p>
+        <p class="neo__rule" aria-hidden="true">---------------</p>
+        <dl class="neo__list">
+          <div><dt>OS</dt><dd data-i18n="neoOS">Tajikistan, Dushanbe</dd></div>
+          <div><dt>Host</dt><dd data-i18n="neoHost">DII, computer science student</dd></div>
+          <div><dt>Uptime</dt><dd data-i18n="neoUptime">shipping since 2021</dd></div>
+          <div><dt>Space</dt><dd data-i18n="neoSpace">NASA Space Apps 2026, team Swarm</dd></div>
+          <div><dt>Packages</dt><dd data-i18n="neoPkgs">10 projects shipped</dd></div>
+          <div><dt>Shell</dt><dd>TypeScript, Python, C, C++, Dart</dd></div>
+          <div><dt>Frontend</dt><dd>React, Next.js, Vite, Tailwind, Flutter</dd></div>
+          <div><dt>Backend</dt><dd>Supabase, PostgreSQL, Flask, REST, WebSockets</dd></div>
+          <div><dt>Mobile</dt><dd>Expo, React Native, Flutter</dd></div>
+          <div><dt>AI</dt><dd>OpenAI, Anthropic, Gemini, Telegram Bot API</dd></div>
+          <div><dt>Mode</dt><dd data-i18n="neoMode">solo: design, code, deploy</dd></div>
+          <div id="ghRepos" hidden><dt>Repos</dt><dd></dd></div>
+          <div id="ghPush" hidden><dt>Last push</dt><dd></dd></div>
+        </dl>
+        <p class="neo__swatch" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></p>
       </div>
     </div>
-  </div>
 
-  <!-- ====== ABOUT ====== -->
-  <section class="section about" id="about">
-    <span class="section__bg-text" aria-hidden="true">ABOUT</span>
-    <div class="container">
-      <div class="section__eyebrow reveal">
-        <span class="mono label-num">01</span>
-        <span class="label">About</span>
-      </div>
-
-      <div class="about__layout">
-        <div class="about__left reveal">
-          <h2 class="section__title">Who I<br>Am</h2>
-        </div>
-        <div class="about__right">
-          <p class="about__p blur-in">
-            I'm Bekha — a self-driven developer who builds things people actually use.
-            Whether it's an AI trading assistant, a Flutter app for ordering lunch,
-            or a luxury fashion store, I care about the full picture:
-            <em>design, performance, and product thinking.</em>
-          </p>
-          <p class="about__p blur-in">
-            Started with Python, went deep into React, TypeScript, and Flutter.
-            Now I ship <strong>full-stack products from scratch — solo.</strong>
-            On the other side: I'm into cybersecurity and ethical hacking —
-            understanding how systems break so I can build ones that don't.
-          </p>
-
-          <div class="about__tags reveal">
-            <span class="tag">Full-Stack</span>
-            <span class="tag">C++ / Systems</span>
-            <span class="tag">Ethical Hacking</span>
-            <span class="tag">CTF Player</span>
-            <span class="tag">AI Builder</span>
-            <span class="tag">Mobile Dev</span>
-          </div>
-
-          <div class="code-block reveal">
-            <div class="code-block__bar">
-              <span class="cb-dot r"></span>
-              <span class="cb-dot y"></span>
-              <span class="cb-dot g"></span>
-              <span class="cb-file mono">bekha.ts</span>
-            </div>
-            <pre class="code-block__body mono"><code><span class="c-kw">const</span> bekha = {
-  name:    <span class="c-str">"Bekha"</span>,
-  github:  <span class="c-str">"pythonhack000"</span>,
-  stack:   [<span class="c-str">"Python"</span>, <span class="c-str">"C"</span>, <span class="c-str">"C++"</span>],
-  into:    [<span class="c-str">"Ethical Hacking"</span>, <span class="c-str">"CTF"</span>, <span class="c-str">"AI"</span>, <span class="c-str">"Products"</span>],
-  tools:   [<span class="c-str">"Kali Linux"</span>, <span class="c-str">"Wireshark"</span>, <span class="c-str">"Burp Suite"</span>],
-  ships:   <span class="c-bool">true</span>,
-};</code></pre>
-          </div>
-        </div>
-      </div>
+    <div class="sec">
+      <p class="cmd"><span class="prompt__ps">$</span> tail ~/security.log</p>
+      <h3 class="h3" data-i18n="secH" data-text="">I break things on purpose, so the ones I ship hold.</h3>
+      <ul class="log">
+        <li><span class="ok">[+]</span> <span data-i18n="log1">Kali Linux as a daily lab</span></li>
+        <li><span class="ok">[+]</span> <span data-i18n="log2">Burp Suite on my own apps before anyone else gets to them</span></li>
+        <li><span class="ok">[+]</span> <span data-i18n="log3">Wireshark, Nmap and Ncat for the network side</span></li>
+        <li><span class="ok">[+]</span> <span data-i18n="log4">CTF and OSINT challenges on weekends</span></li>
+        <li><span class="ok">[+]</span> <span data-i18n="log5">Escrow and payment flows reviewed line by line</span></li>
+      </ul>
     </div>
   </section>
 
-  <!-- ====== WORK ====== -->
-  <section class="section work" id="work">
-    <span class="section__bg-text" aria-hidden="true">WORK</span>
-    <div class="container">
-      <div class="section__eyebrow reveal">
-        <span class="mono label-num">02</span>
-        <span class="label">Work</span>
-      </div>
-      <h2 class="section__title reveal">Selected<br>Projects</h2>
-
-      <div class="projects-list">
-
-        <article class="project reveal" data-index="01">
-          <div class="project__head">
-            <div class="project__num mono">01</div>
-            <h3 class="project__title">AccBozor — Account Marketplace</h3>
-            <div class="project__links">
-              <a href="https://pythonhack000.github.io/bozor/" target="_blank" class="project__link">Live</a>
-              <a href="https://github.com/pythonhack000/bozor" target="_blank" class="project__link">GitHub</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Marketplace for game and Steam accounts, built for Tajikistan. Escrow-protected P2P deals,
-              manual payment confirmation flow, seller/buyer dashboards. Next.js static export on a Supabase backend.
-            </p>
-            <div class="project__stack">
-              <span>Next.js</span><span>TypeScript</span><span>Supabase</span><span>Escrow</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="02">
-          <div class="project__head">
-            <div class="project__num mono">02</div>
-            <h3 class="project__title">TRADEBOARD — AI Chart Assistant</h3>
-            <div class="project__links">
-              <a href="https://pythonhack000.github.io/tradevision/" target="_blank" class="project__link">Live</a>
-              <a href="https://github.com/pythonhack000/tradevision" target="_blank" class="project__link">GitHub</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              AI trading-education tool that draws directly on a live chart — trendlines, support/resistance,
-              zones — animated like chalk, synced to a streamed explanation. Multi-provider AI (OpenAI, Anthropic,
-              Gemini, Cerebras), full TradingView-style drawing toolset, black-and-white chalkboard design.
-              Educational only — no signals.
-            </p>
-            <div class="project__stack">
-              <span>React</span><span>TypeScript</span><span>Vite</span><span>Multi-Provider AI</span><span>Canvas</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="03">
-          <div class="project__head">
-            <div class="project__num mono">03</div>
-            <h3 class="project__title">bysabr — Luxury Fashion Store</h3>
-            <div class="project__links">
-              <a href="https://pythonhack000.github.io/bysabr-shop/" target="_blank" class="project__link">Live</a>
-              <a href="https://github.com/pythonhack000/bysabr-shop" target="_blank" class="project__link">GitHub</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Pixel-perfect luxury fashion e-commerce. Playfair Display typography, product catalog,
-              admin panel, checkout flow, Supabase backend for cross-device sync. Premium minimal aesthetic.
-            </p>
-            <div class="project__stack">
-              <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Supabase</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="04">
-          <div class="project__head">
-            <div class="project__num mono">04</div>
-            <h3 class="project__title">Smart Canteen</h3>
-            <div class="project__links">
-              <a href="https://github.com/pythonhack000/canteen-mobile" target="_blank" class="project__link">Mobile</a>
-              <a href="https://github.com/pythonhack000/canteen-web" target="_blank" class="project__link">Web</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              University canteen ordering system — Expo mobile app plus a Capacitor-wrapped web client.
-              Menu browsing, bonuses, real-time order tracking, Supabase backend shared across both.
-            </p>
-            <div class="project__stack">
-              <span>Expo</span><span>React Native</span><span>React</span><span>Capacitor</span><span>Supabase</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="05">
-          <div class="project__head">
-            <div class="project__num mono">05</div>
-            <h3 class="project__title">Takhtabozor</h3>
-            <div class="project__links">
-              <a href="https://pythonhack000.github.io/takhtabozor/" target="_blank" class="project__link">Live</a>
-              <a href="https://github.com/pythonhack000/takhtabozor" target="_blank" class="project__link">GitHub</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Local marketplace web app. React + TypeScript SPA on Vite, Tailwind-driven UI,
-              built for speed on a lean component architecture.
-            </p>
-            <div class="project__stack">
-              <span>React</span><span>TypeScript</span><span>Vite</span><span>Tailwind</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="06">
-          <div class="project__head">
-            <div class="project__num mono">06</div>
-            <h3 class="project__title">FLEX — Gym Access Platform</h3>
-            <div class="project__links">
-              <a href="https://pythonhack000.github.io/gym/" target="_blank" class="project__link">Live</a>
-              <a href="https://github.com/pythonhack000/gym" target="_blank" class="project__link">GitHub</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Pay-per-visit gym subscription platform concept — one membership, access to multiple gyms.
-              Product landing page plus an interactive app prototype, backed by full market and pricing research.
-            </p>
-            <div class="project__stack">
-              <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Product Design</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="07">
-          <div class="project__head">
-            <div class="project__num mono">07</div>
-            <h3 class="project__title">DII Campus</h3>
-            <div class="project__links">
-              <a href="https://pythonhack000.github.io/dii-campus/" target="_blank" class="project__link">Live</a>
-              <a href="https://github.com/pythonhack000/dii-campus" target="_blank" class="project__link">GitHub</a>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Single-page campus site — clean layout, fast load, zero dependencies.
-              Pure HTML/CSS/JS.
-            </p>
-            <div class="project__stack">
-              <span>HTML</span><span>CSS</span><span>JavaScript</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="08">
-          <div class="project__head">
-            <div class="project__num mono">08</div>
-            <h3 class="project__title">TradeSignal AI Bot</h3>
-            <div class="project__links">
-              <span class="project__link project__link--dim">Telegram</span>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              AI-powered Telegram trading signals bot. Real-time market analysis via OpenAI,
-              audio/video processing with FFmpeg, runs 24/7 on VPS.
-              Smart signal generation for traders.
-            </p>
-            <div class="project__stack">
-              <span>Python</span><span>OpenAI</span><span>Telegram API</span><span>FFmpeg</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="09">
-          <div class="project__head">
-            <div class="project__num mono">09</div>
-            <h3 class="project__title">Cybersecurity Market Research</h3>
-            <div class="project__links">
-              <span class="project__link project__link--dim">Research</span>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Deep-dive sector analysis of the global cybersecurity market 2025–2030 —
-              market sizing, regional breakdowns, business architectures, technical paradigms.
-            </p>
-            <div class="project__stack">
-              <span>Market Analysis</span><span>Cybersecurity</span><span>Business Strategy</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal" data-index="10">
-          <div class="project__head">
-            <div class="project__num mono">10</div>
-            <h3 class="project__title">Private Equity — Central Asia</h3>
-            <div class="project__links">
-              <span class="project__link project__link--dim">Research</span>
-            </div>
-          </div>
-          <div class="project__body">
-            <p class="project__desc">
-              Operational and investment framework for private equity across Central Asia —
-              geopolitical context, regulatory landscape, and portfolio value-creation strategy.
-            </p>
-            <div class="project__stack">
-              <span>Private Equity</span><span>Market Analysis</span><span>Central Asia</span>
-            </div>
-          </div>
-        </article>
-
-      </div>
-    </div>
+  <!-- CONTACT -->
+  <section class="contact" id="contact" aria-labelledby="contact-h">
+    <p class="cmd"><span class="prompt__ps">$</span> ./hire --bekha</p>
+    <h2 id="contact-h" class="contact__h" data-i18n="contactH" data-text="">Got a product in your head? Send it over.</h2>
+    <p class="contact__lead" data-i18n="contactLead">One paragraph is enough. I reply fastest on Telegram.</p>
+    <ul class="links">
+      <li><a class="big" href="https://t.me/sabrsf0"><b class="big__label" data-text="telegram">telegram</b><span>@sabrsf0</span></a></li>
+      <li><a class="big" href="mailto:pythonhack000@gmail.com"><b class="big__label" data-text="email">email</b><span>pythonhack000@gmail.com</span></a></li>
+      <li><a class="big" href="https://github.com/pythonhack000"><b class="big__label" data-text="github">github</b><span>pythonhack000</span></a></li>
+      <li><a class="big" href="https://www.linkedin.com/in/behruz-nabizoda-669491238/"><b class="big__label" data-text="linkedin">linkedin</b><span>Behruz Nabizoda</span></a></li>
+    </ul>
   </section>
+</main>
 
-  <!-- ====== SKILLS ====== -->
-  <section class="section skills" id="skills">
-    <span class="section__bg-text" aria-hidden="true">SKILLS</span>
-    <div class="container">
-      <div class="section__eyebrow reveal">
-        <span class="mono label-num">03</span>
-        <span class="label">Skills</span>
-      </div>
-      <h2 class="section__title reveal">My Arsenal</h2>
+<footer class="foot">
+  <p>exit 0</p>
+  <p data-i18n="foot">&copy; 2026 Bekha. Built by hand, no templates.</p>
+</footer>
 
-      <div class="skills-grid">
-
-        <div class="skill-cat reveal">
-          <h3 class="skill-cat__name mono">Languages</h3>
-          <ul class="skill-cat__list">
-            <li>Python</li>
-            <li>C</li>
-            <li>C++</li>
-            <li>JavaScript</li>
-            <li>Dart</li>
-          </ul>
-        </div>
-
-        <div class="skill-cat reveal">
-          <h3 class="skill-cat__name mono">Frontend</h3>
-          <ul class="skill-cat__list">
-            <li>React</li>
-            <li>Flutter</li>
-            <li>Vite</li>
-            <li>HTML / CSS</li>
-          </ul>
-        </div>
-
-        <div class="skill-cat reveal">
-          <h3 class="skill-cat__name mono">Backend</h3>
-          <ul class="skill-cat__list">
-            <li>Flask</li>
-            <li>REST APIs</li>
-            <li>PostgreSQL</li>
-            <li>SQLAlchemy</li>
-          </ul>
-        </div>
-
-        <div class="skill-cat reveal">
-          <h3 class="skill-cat__name mono">Cloud &amp; Tools</h3>
-          <ul class="skill-cat__list">
-            <li>Firebase</li>
-            <li>GitHub Actions</li>
-            <li>VPS / Linux</li>
-            <li>Git</li>
-          </ul>
-        </div>
-
-        <div class="skill-cat reveal">
-          <h3 class="skill-cat__name mono">AI &amp; APIs</h3>
-          <ul class="skill-cat__list">
-            <li>OpenAI API</li>
-            <li>Gemini API</li>
-            <li>Telegram Bot API</li>
-            <li>WebSockets</li>
-          </ul>
-        </div>
-
-        <div class="skill-cat skill-cat--cyber reveal">
-          <h3 class="skill-cat__name mono">Cybersecurity</h3>
-          <ul class="skill-cat__list">
-            <li>Ethical Hacking</li>
-            <li>Kali Linux</li>
-            <li>Burp Suite</li>
-            <li>Wireshark</li>
-            <li>Nmap / Ncat</li>
-            <li>CTF / OSINT</li>
-            <li>DPI Bypass</li>
-            <li>Network Security</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ====== CONTACT ====== -->
-  <section class="section contact" id="contact">
-    <span class="section__bg-text" aria-hidden="true">CONTACT</span>
-    <div class="container">
-      <div class="section__eyebrow reveal">
-        <span class="mono label-num">04</span>
-        <span class="label">Contact</span>
-      </div>
-
-      <div class="contact__big reveal">
-        <h2 class="contact__cta">Let's build<br><span class="contact__cta-accent">something real.</span></h2>
-      </div>
-
-      <div class="contact__row reveal">
-        <div class="contact-item contact-item--copy magnetic" data-copy="pythonhack000@gmail.com" data-strength="20" style="cursor:none;">
-          <span class="contact-item__label mono">Email</span>
-          <span class="contact-item__val">pythonhack000@gmail.com</span>
-          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-        </div>
-        <a href="https://www.linkedin.com/in/behruz-nabizoda-669491238/" target="_blank" class="contact-item magnetic" data-strength="20">
-          <span class="contact-item__label mono">LinkedIn</span>
-          <span class="contact-item__val">LinkedIn</span>
-          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
-        </a>
-        <a href="https://t.me/sabrsf0" target="_blank" class="contact-item magnetic" data-strength="20">
-          <span class="contact-item__label mono">Telegram</span>
-          <span class="contact-item__val">@sabrsf0</span>
-          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ====== FOOTER ====== -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__inner">
-        <span class="mono">BEKHA — 2026</span>
-        <span class="mono footer__clock" id="liveClock"></span>
-        <span class="mono footer__credit">Built without limits.</span>
-      </div>
-    </div>
-  </footer>
-
-  <!-- BACK TO TOP -->
-  <button id="backToTop" aria-label="Back to top">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-  </button>
-
-  <!-- TOAST -->
-  <div id="toast"></div>
-
-  <!-- CURSOR TRAIL -->
-  <div id="cursorTrail"></div>
-
-  <script src="script.js?v=3"></script>
+<script src="i18n.js?v=8" defer></script>
+<script src="earth-map.js?v=1" defer></script>
+<script src="globe.js?v=9" defer></script>
+<script src="intro.js?v=4" defer></script>
+<script src="extras.js?v=10" defer></script>
+<script src="script.js?v=18" defer></script>
+<script src="fx.js?v=5" defer></script>
+<script src="os.js?v=1" defer></script>
 </body>
 </html>

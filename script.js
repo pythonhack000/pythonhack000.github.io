@@ -1,852 +1,652 @@
-/* ============================================================
-   BEKHA PORTFOLIO — script.js
-   Custom cursor, magnetic buttons, counter, reveal,
-   marquee pause, scroll-activated nav, drawer, glitch.
-   ============================================================ */
+/* Bekha — terminal portfolio. Plain JS, no dependencies. */
+(() => {
+  'use strict';
 
-// ===== PRELOADER =====
-(function() {
-  const pre    = document.getElementById('preloader');
-  const preNum = document.getElementById('preNum');
-  const preBar = document.getElementById('preBarFill');
-  if (!pre) return;
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TZ = 'Asia/Dushanbe';
+  const THEMES = ['amber', 'green', 'white'];
+  const BOOT_STEP_MS = 140;
+  const GH_USER = 'pythonhack000';
+  const HOME = '/home/bekha';
+  const I = window.bekhaI18n || { t: (k) => k, set: () => false, lang: 'en' };
+  const t = (...a) => I.t(...a);
+  const GLYPHS = '!<>-_\\/[]{}=+*^?#$%&@01';
 
-  document.body.style.overflow = 'hidden';
+  const LINKS = Object.freeze({
+    telegram: 'https://t.me/sabrsf0',
+    email: 'mailto:pythonhack000@gmail.com',
+    github: 'https://github.com/pythonhack000',
+    linkedin: 'https://www.linkedin.com/in/behruz-nabizoda-669491238/',
+  });
 
-  let p = 0;
-  const GLITCH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%*';
+  const PROJECTS = Object.freeze([
+    { name: 'lunar-navigator', what: 'NASA Space Apps 2026: Moon landing sites', url: 'https://pythonhack000.github.io/lunar-navigator/' },
+    { name: 'tradeboard', what: 'AI draws on a live trading chart', url: 'https://pythonhack000.github.io/tradevision/' },
+    { name: 'accbozor', what: 'game account marketplace with escrow', url: 'https://pythonhack000.github.io/bozor/' },
+    { name: 'flex', what: 'one pass for Dushanbe gyms', url: 'https://pythonhack000.github.io/gym/' },
+    { name: 'takhtabozor', what: 'stock and debts for a timber yard', url: 'https://pythonhack000.github.io/takhtabozor/' },
+    { name: 'bysabr', what: 'fashion store with an admin panel', url: 'https://pythonhack000.github.io/bysabr-shop/' },
+    { name: 'smart-canteen', what: 'canteen ordering app, Expo', url: 'https://github.com/pythonhack000/canteen-mobile' },
+    { name: 'tradesignal-bot', what: 'Telegram signals bot, Python + OpenAI', url: null },
+    { name: 'dii-campus', what: 'student app for DII', url: 'https://pythonhack000.github.io/dii-campus/' },
+  ]);
 
-  const tick = setInterval(() => {
-    const speed = p < 70 ? (Math.random() * 2.5 + 0.5) : (Math.random() * 1.2 + 0.3);
-    p = Math.min(p + speed, 100);
+  /* ---------------- the name decrypts once ---------------- */
+  function decrypt(el, durationMs) {
+    const target = el.dataset.text || el.textContent;
+    if (REDUCED) { el.textContent = target; return; }
+    const start = performance.now();
+    const frame = (now) => {
+      const p = Math.min(1, (now - start) / durationMs);
+      const fixed = Math.floor(p * target.length);
+      el.textContent = target.split('').map((ch, i) =>
+        i < fixed ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
+      ).join('');
+      if (p < 1) requestAnimationFrame(frame);
+      else el.textContent = target;
+    };
+    requestAnimationFrame(frame);
+    setTimeout(() => { el.textContent = target; }, durationMs + 400); // rAF can stall in a background tab
+  }
+  const firstVisit = !document.documentElement.classList.contains('seen');
+  try { sessionStorage.setItem('seen', '1'); } catch (e) { /* storage blocked: intro plays every time */ }
+  const nameEl = document.getElementById('name');
+  if (nameEl) setTimeout(() => decrypt(nameEl, 1100), firstVisit && !REDUCED ? 650 : 0);
 
-    const display = Math.floor(p);
-    preBar.style.width = p + '%';
+  /* ---------------- word to ASCII art (for projects without a screenshot) ---------------- */
+  function asciiWord(word) {
+    const cols = 72, rows = 14;
+    const c = document.createElement('canvas');
+    c.width = cols; c.height = rows;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    if (!g) return word;
+    g.fillStyle = '#000'; g.fillRect(0, 0, cols, rows);
+    g.fillStyle = '#fff';
+    g.textBaseline = 'middle'; g.textAlign = 'center';
+    let size = rows * 1.15;
+    g.font = `${size}px VT323, monospace`;
+    while (g.measureText(word).width > cols - 4 && size > 6) { size -= 1; g.font = `${size}px VT323, monospace`; }
+    g.fillText(word, cols / 2, rows / 2 + 1);
+    const data = g.getImageData(0, 0, cols, rows).data;
+    const RAMP = ' .:-=+*#%@';
+    let s = '';
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const v = data[(y * cols + x) * 4] / 255;
+        s += RAMP[Math.min(RAMP.length - 1, Math.floor(v * RAMP.length))];
+      }
+      s += '\n';
+    }
+    return s;
+  }
 
-    // occasional glitch char on last digit
-    const str = String(display).padStart(3, '0');
-    if (Math.random() < 0.15) {
-      preNum.textContent = str.slice(0, -1) + GLITCH[Math.floor(Math.random() * GLITCH.length)];
+  /* ---------------- live checks: one HEAD request per live project ---------------- */
+  const pingCache = new Map();
+  const canPing = (url) => Boolean(url) && url.startsWith(location.origin) && location.protocol.startsWith('http');
+
+  async function check(url) {
+    const t0 = performance.now();
+    try {
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      const result = { ok: res.ok, status: res.status, ms: Math.round(performance.now() - t0) };
+      pingCache.set(url, result);
+      return result;
+    } catch (err) {
+      const result = { ok: false, status: 0, ms: 0 };
+      pingCache.set(url, result);
+      return result;
+    }
+  }
+  const describe = (r) => (r.status ? `HTTP ${r.status}  ${r.ms}ms` : t('pingNone'));
+
+  /* ---------------- nmap rows drive the screen ---------------- */
+  const rows = Array.from(document.querySelectorAll('.row'));
+  const crt = document.querySelector('.screen__crt');
+  const shot = document.getElementById('shot');
+  const shotAscii = document.getElementById('shotAscii');
+  const shotCap = document.getElementById('shotCap');
+  const pingEl = document.getElementById('ping');
+  const asciiCache = new Map();
+  const rowUrl = (row) => row.querySelector('a.row__link')?.href ?? null;
+  const rowName = (row) => row.querySelector('.row__name')?.textContent ?? '';
+
+  rows.forEach((r) => { if (r.dataset.shot) { const i = new Image(); i.src = r.dataset.shot; } });
+
+  function markRow(row, result) {
+    const state = row.querySelector('.row__state');
+    if (!state) return;
+    state.classList.remove('is-checking');
+    state.textContent = result.ok ? 'open' : 'down';
+    state.classList.toggle('is-down', !result.ok);
+  }
+
+  let pingToken = 0;
+  async function showPing(row) {
+    if (!pingEl) return;
+    const token = ++pingToken;
+    const url = rowUrl(row);
+    pingEl.className = 'ping';
+    if (!url) { pingEl.textContent = t('pingPrivate'); return; }
+    if (url.startsWith('https://github.com/')) { pingEl.textContent = t('pingGithub'); return; }
+    if (!canPing(url)) { pingEl.textContent = ''; return; }
+    pingEl.textContent = t('pingWait');
+    const r = await check(url);
+    if (token !== pingToken) return;
+    pingEl.textContent = describe(r);
+    pingEl.classList.toggle('is-down', !r.ok);
+    markRow(row, r);
+  }
+
+  function setActive(row) {
+    if (!row || row.classList.contains('is-on')) return;
+    rows.forEach((r) => r.classList.toggle('is-on', r === row));
+    const port = row.querySelector('.row__port')?.textContent ?? '';
+    const name = rowName(row);
+    if (shotCap) shotCap.textContent = `${port}  ${name}`;
+    if (row.dataset.shot) {
+      shotAscii.hidden = true;
+      shot.hidden = false;
+      shot.src = row.dataset.shot;
+      shot.alt = row.dataset.alt || name;
     } else {
-      preNum.textContent = str;
+      const key = row.dataset.ascii || name.toUpperCase();
+      if (!asciiCache.has(key)) asciiCache.set(key, asciiWord(key));
+      shotAscii.textContent = asciiCache.get(key);
+      shotAscii.hidden = false;
+      shot.hidden = true;
     }
+    showPing(row);
+    document.dispatchEvent(new CustomEvent('bekha:channel', { detail: { port: port.replace('/tcp', ''), name } }));
+    if (crt && !REDUCED) { crt.classList.remove('is-tuning'); void crt.offsetWidth; crt.classList.add('is-tuning'); }
+  }
+  rows.forEach((r) => {
+    r.addEventListener('pointerenter', () => setActive(r));
+    r.addEventListener('focusin', () => setActive(r));
+  });
+  if (rows[0]) showPing(rows[0]);
 
-    if (p >= 100) {
-      clearInterval(tick);
-      preNum.textContent = '100';
-      preBar.style.width = '100%';
-      setTimeout(() => {
-        pre.classList.add('exit');
-        document.body.style.overflow = '';
-        pre.addEventListener('animationend', () => {
-          pre.style.display = 'none';
-          // trigger scramble on hero chars
-          _scrambleHero();
-          // start counter animations after preloader is gone
-          if (window._startCounters) window._startCounters();
-        }, { once: true });
-      }, 300);
+  /* the scan: when /work comes into view, check every live port for real */
+  const uptime = document.getElementById('uptime');
+  const uptimeText = document.getElementById('uptimeText');
+  let scanned = false;
+  let uptimeState = ['uptimeWait'];
+  async function scan() {
+    if (scanned || !uptime) return;
+    scanned = true;
+    const live = rows.filter((r) => canPing(rowUrl(r)));
+    if (!live.length) { uptimeState = ['uptimeLocal']; uptimeText.textContent = t('uptimeLocal'); return; }
+    live.forEach((r) => r.querySelector('.row__state')?.classList.add('is-checking'));
+    uptimeText.textContent = t('uptimeRun', live.length);
+    const results = await Promise.all(live.map(async (r) => { const res = await check(rowUrl(r)); markRow(r, res); return res; }));
+    const up = results.filter((r) => r.ok);
+    const sorted = up.map((r) => r.ms).sort((a, b) => a - b);
+    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+    uptimeState = ['uptimeDone', up.length, results.length, median];
+    uptimeText.textContent = t(...uptimeState);
+    uptime.classList.add(up.length === results.length ? 'is-done' : 'is-bad');
+  }
+  if (uptime) {
+    new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { scan(); obs.disconnect(); } }, { rootMargin: '0px 0px -30% 0px' }).observe(uptime);
+  }
+
+  /* ---------------- live GitHub in neofetch ---------------- */
+  function ago(iso) {
+    const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    const units = [['year', 31536000], ['month', 2592000], ['day', 86400], ['hour', 3600], ['minute', 60]];
+    for (const [u, sec] of units) { const n = Math.floor(s / sec); if (n >= 1) return t('ago', n, u); }
+    return t('ago', 0, 'now');
+  }
+  const ghFill = (id, text) => { const el = document.getElementById(id); if (!el) return; el.querySelector('dd').textContent = text; el.hidden = false; };
+  const github = { repos: null, last: null };
+  function paintGithub() {
+    if (github.repos !== null) ghFill('ghRepos', t('ghRepos', github.repos));
+    if (github.last) ghFill('ghPush', t('ghPush', ago(github.last.at), github.last.name));
+  }
+  (async () => {
+    try {
+      const [user, repos] = await Promise.all([
+        fetch(`https://api.github.com/users/${GH_USER}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`user ${r.status}`)))),
+        fetch(`https://api.github.com/users/${GH_USER}/repos?sort=pushed&per_page=1`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`repos ${r.status}`)))),
+      ]);
+      if (typeof user.public_repos === 'number') github.repos = user.public_repos;
+      const top = Array.isArray(repos) ? repos[0] : null;
+      if (top && top.pushed_at) github.last = { name: top.name, at: top.pushed_at };
+      paintGithub();
+    } catch (err) {
+      /* GitHub rate limit or offline: the rows stay hidden, nothing else depends on them */
     }
-  }, 28);
-})();
-
-// ===== TEXT SCRAMBLE on BEKHA =====
-function _scrambleHero() {
-  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@$%';
-  const heroChars = document.querySelectorAll('.hero__name .char');
-  heroChars.forEach((el, i) => {
-    const finalChar = el.getAttribute('data-char') || el.textContent;
-    el.setAttribute('data-char', finalChar);
-    const delay = i * 60;
-    const duration = 500;
-    let startTs = null;
-
-    setTimeout(() => {
-      (function frame(ts) {
-        if (!startTs) startTs = ts;
-        const elapsed = ts - startTs;
-        if (elapsed < duration - 120) {
-          el.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
-          requestAnimationFrame(frame);
-        } else {
-          el.textContent = finalChar;
-        }
-      })(performance.now());
-    }, delay);
-  });
-
-  // typewriter on hero label after scramble
-  const label = document.getElementById('typewriterLabel');
-  if (label) {
-    const text = 'Full-Stack Developer & Builder';
-    let i = 0;
-    label.textContent = '';
-    const typeInterval = setInterval(() => {
-      label.textContent += text[i];
-      i++;
-      if (i >= text.length) clearInterval(typeInterval);
-    }, 42);
-  }
-}
-
-// ===== CURSOR =====
-const cur = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
-let mx = -100, my = -100, rx = -100, ry = -100;
-
-document.addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY;
-  cur.style.left  = mx + 'px';
-  cur.style.top   = my + 'px';
-});
-
-(function loopRing() {
-  rx += (mx - rx) * 0.1;
-  ry += (my - ry) * 0.1;
-  ring.style.left = rx + 'px';
-  ring.style.top  = ry + 'px';
-  requestAnimationFrame(loopRing);
-})();
-
-// hover states
-document.querySelectorAll('a, button, .project, .skill-cat, .contact-item, .tag').forEach(el => {
-  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
-  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
-});
-
-// ===== MAGNETIC BUTTONS =====
-document.querySelectorAll('.magnetic').forEach(btn => {
-  const strength = parseInt(btn.dataset.strength) || 30;
-  btn.addEventListener('mousemove', e => {
-    const r = btn.getBoundingClientRect();
-    const cx = r.left + r.width  / 2;
-    const cy = r.top  + r.height / 2;
-    const dx = (e.clientX - cx) / (r.width  / 2);
-    const dy = (e.clientY - cy) / (r.height / 2);
-    btn.style.transform = `translate(${dx * strength * 0.4}px, ${dy * strength * 0.4}px)`;
-  });
-  btn.addEventListener('mouseleave', () => {
-    btn.style.transform = '';
-  });
-});
-
-// ===== NAV STICKY + SCROLL HINT HIDE + PROGRESS + BACK TO TOP =====
-const nav = document.getElementById('nav');
-const scrollHint = document.getElementById('scrollHint');
-const progressBar = document.getElementById('scrollProgress');
-const backToTop = document.getElementById('backToTop');
-
-// move button to document.body directly to escape any overflow clipping
-if (backToTop && backToTop.parentElement !== document.body) {
-  document.body.appendChild(backToTop);
-}
-
-let _scrollRafPending = false;
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('sticky', window.scrollY > 60);
-  if (scrollHint) {
-    scrollHint.classList.toggle('hide', window.scrollY > 60);
-  }
-  if (backToTop) {
-    backToTop.classList.toggle('visible', window.scrollY > 150);
-  }
-  if (progressBar && !_scrollRafPending) {
-    _scrollRafPending = true;
-    requestAnimationFrame(() => {
-      const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
-      progressBar.style.width = pct + '%';
-      _scrollRafPending = false;
-    });
-  }
-}, { passive: true });
-
-// ===== MOBILE DRAWER =====
-const toggle = document.getElementById('navToggle');
-const drawer = document.getElementById('drawer');
-let drawerOpen = false;
-
-toggle.addEventListener('click', () => {
-  drawerOpen = !drawerOpen;
-  drawer.classList.toggle('open', drawerOpen);
-  const [s1, s2] = toggle.querySelectorAll('span');
-  if (drawerOpen) {
-    s1.style.transform = 'translateY(7.5px) rotate(45deg)';
-    s2.style.transform = 'translateY(-7.5px) rotate(-45deg)';
-  } else {
-    s1.style.transform = '';
-    s2.style.transform = '';
-  }
-});
-
-drawer.querySelectorAll('.drawer__link').forEach(l => {
-  l.addEventListener('click', () => {
-    drawerOpen = false;
-    drawer.classList.remove('open');
-    toggle.querySelectorAll('span').forEach(s => s.style.transform = '');
-  });
-});
-
-// ===== SCROLL REVEAL =====
-const revealObs = new IntersectionObserver((entries) => {
-  entries.forEach((entry, _, obs) => {
-    if (!entry.isIntersecting) return;
-    const siblings = [...entry.target.parentElement.querySelectorAll('.reveal:not(.vis)')];
-    let delay = 0;
-    siblings.forEach(sib => {
-      if (!sib.classList.contains('vis')) {
-        sib.style.transitionDelay = delay + 'ms';
-        delay += 90;
-      }
-    });
-    entry.target.classList.add('vis');
-    revealObs.unobserve(entry.target);
-  });
-}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
-
-document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
-
-// ===== COUNTER ANIMATION =====
-const GLITCH_DIGITS = '0123456789#@$%&!?';
-
-const counterObs = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (!entry.isIntersecting) return;
-    const el = entry.target;
-    const target = parseInt(el.dataset.target);
-    let start = 0;
-    const duration = 1400;
-    const step = timestamp => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      const current = Math.floor(easeOut(progress) * target);
-
-      // glitch: in the first 60% randomly replace with glitch char
-      if (progress < 0.6 && Math.random() < 0.35) {
-        el.textContent = GLITCH_DIGITS[Math.floor(Math.random() * GLITCH_DIGITS.length)];
-      } else {
-        el.textContent = current;
-      }
-
-      if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = target + '+';
-    };
-    requestAnimationFrame(step);
-    counterObs.unobserve(el);
-  });
-}, { threshold: 0.5 });
-
-// counters start only after preloader is gone (hero is always visible, observer fires immediately otherwise)
-window._startCounters = function() {
-  document.querySelectorAll('.counter').forEach(el => {
-    const target = parseInt(el.dataset.target);
-    let start = 0;
-    const duration = 1400;
-    const step = timestamp => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      const current = Math.floor(easeOut(progress) * target);
-      if (progress < 0.6 && Math.random() < 0.35) {
-        el.textContent = GLITCH_DIGITS[Math.floor(Math.random() * GLITCH_DIGITS.length)];
-      } else {
-        el.textContent = current;
-      }
-      if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = target + '+';
-    };
-    requestAnimationFrame(step);
-  });
-};
-
-function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-
-// ===== MARQUEE PAUSE ON HOVER =====
-const marqueeInner = document.querySelector('.marquee__inner');
-if (marqueeInner) {
-  marqueeInner.addEventListener('mouseenter', () => {
-    marqueeInner.style.animationPlayState = 'paused';
-  });
-  marqueeInner.addEventListener('mouseleave', () => {
-    marqueeInner.style.animationPlayState = 'running';
-  });
-}
-
-// ===== ACTIVE NAV LINK =====
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav__links a');
-
-const activeObs = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      navLinks.forEach(l => l.classList.remove('active'));
-      const a = document.querySelector(`.nav__links a[href="#${entry.target.id}"]`);
-      if (a) a.classList.add('active');
-    }
-  });
-}, { threshold: 0.4 });
-
-sections.forEach(s => activeObs.observe(s));
-
-// ===== PIXEL BLOCK RANDOM SHIFT =====
-const pixelBlock = document.querySelector('.hero__pixel-block');
-if (pixelBlock) {
-  const colors = ['#7c3aed', '#a78bfa', '#06060a', '#4c1d95', '#6d28d9'];
-  function randomPixel() {
-    const shuffled = [...colors].sort(() => Math.random() - 0.5);
-    const gradient = shuffled.map((c, i) => {
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      return `linear-gradient(${c} 0 0) ${col * 33}% ${row * 33}% / 33% 33%`;
-    }).join(', ');
-    pixelBlock.style.background = gradient;
-    pixelBlock.style.backgroundRepeat = 'no-repeat';
-  }
-  setInterval(randomPixel, 600);
-}
-
-// ===== CONTACT CTA HOVER GLITCH =====
-const ctaAccent = document.querySelector('.contact__cta-accent');
-if (ctaAccent) {
-  let glitchTimer;
-  ctaAccent.addEventListener('mouseenter', () => {
-    glitchTimer = setInterval(() => {
-      ctaAccent.style.transform = `translate(${(Math.random()-0.5)*4}px, ${(Math.random()-0.5)*2}px)`;
-      setTimeout(() => { ctaAccent.style.transform = ''; }, 80);
-    }, 120);
-  });
-  ctaAccent.addEventListener('mouseleave', () => {
-    clearInterval(glitchTimer);
-    ctaAccent.style.transform = '';
-  });
-}
-
-// ===== PROJECT HOVER CURSOR LABEL =====
-const cursorLabel = document.getElementById('cursor-label');
-
-document.querySelectorAll('.project').forEach(p => {
-  p.addEventListener('mouseenter', () => {
-    document.body.classList.add('cursor-view', 'hovering');
-    if (cursorLabel) cursorLabel.textContent = 'VIEW →';
-  });
-  p.addEventListener('mouseleave', () => {
-    document.body.classList.remove('cursor-view', 'hovering');
-  });
-});
-
-// ===== TAP TO EXPAND PROJECT (touch devices have no :hover) =====
-document.querySelectorAll('.project').forEach(p => {
-  const head = p.querySelector('.project__head');
-  if (!head) return;
-  head.addEventListener('click', e => {
-    if (e.target.closest('.project__link')) return;
-    p.classList.toggle('is-open');
-  });
-});
-
-// update cursor-label position alongside cursor-ring
-const _spotlight = document.getElementById('spotlight');
-let _spotTX = -600, _spotTY = -600, _spotCX = -600, _spotCY = -600;
-(function _spotLoop() {
-  _spotCX += (_spotTX - _spotCX) * 0.07;
-  _spotCY += (_spotTY - _spotCY) * 0.07;
-  if (_spotlight) _spotlight.style.background =
-    `radial-gradient(circle 550px at ${_spotCX}px ${_spotCY}px, rgba(124,58,237,0.055) 0%, transparent 70%)`;
-  requestAnimationFrame(_spotLoop);
-})();
-
-document.addEventListener('mousemove', e => {
-  _spotTX = e.clientX; _spotTY = e.clientY;
-  if (cursorLabel) {
-    cursorLabel.style.left = e.clientX + 'px';
-    cursorLabel.style.top  = e.clientY + 'px';
-  }
-});
-
-// ===== SMOOTH HASH SCROLL =====
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const target = document.querySelector(a.getAttribute('href'));
-    if (!target) return;
-    e.preventDefault();
-    const offset = nav.offsetHeight + 20;
-    window.scrollTo({ top: target.offsetTop - offset, behavior: 'smooth' });
-  });
-});
-
-// ===== PARTICLE FIELD =====
-(function() {
-  const canvas = document.getElementById('particleCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
-  let mouseX = -9999, mouseY = -9999;
-
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-
-  const COUNT = 70;
-  for (let i = 0; i < COUNT; i++) {
-    particles.push({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      r: Math.random() * 1.5 + 0.5
-    });
-  }
-
-  function drawParticles() {
-    ctx.clearRect(0, 0, W, H);
-
-    // draw connections
-    for (let i = 0; i < particles.length; i++) {
-      const a = particles[i];
-      // connect to mouse
-      const dm = Math.hypot(a.x - mouseX, a.y - mouseY);
-      if (dm < 140) {
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(mouseX, mouseY);
-        ctx.strokeStyle = `rgba(167,139,250,${(1 - dm / 140) * 0.25})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
-      // connect to nearby particles
-      for (let j = i + 1; j < particles.length; j++) {
-        const b = particles[j];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d < 100) {
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(124,58,237,${(1 - d / 100) * 0.15})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
-
-    // draw dots
-    particles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < 0) p.x = W;
-      if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H;
-      if (p.y > H) p.y = 0;
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(167,139,250,0.55)';
-      ctx.fill();
-    });
-
-    requestAnimationFrame(drawParticles);
-  }
-  drawParticles();
-})();
-
-// ===== 3D TILT + SHINE ON PROJECT CARDS =====
-document.querySelectorAll('.project').forEach(card => {
-  card.addEventListener('mousemove', e => {
-    const r = card.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width  - 0.5;
-    const y = (e.clientY - r.top)  / r.height - 0.5;
-    card.style.transform = `perspective(800px) rotateY(${x * 8}deg) rotateX(${-y * 5}deg) scale(1.02)`;
-    // shine follows cursor
-    card.style.setProperty('--shine-x', (e.clientX - r.left) + 'px');
-    card.style.setProperty('--shine-y', (e.clientY - r.top) + 'px');
-  });
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = '';
-    card.style.transition = 'transform 0.6s cubic-bezier(0.16,1,0.3,1)';
-    setTimeout(() => { card.style.transition = ''; }, 600);
-  });
-});
-
-// ===== SECTION TITLE WORD-SPLIT REVEAL =====
-(function() {
-  const titleSplitObs = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const words = entry.target.querySelectorAll('.split-word__inner');
-      words.forEach((w, i) => { w.style.transitionDelay = (i * 75) + 'ms'; });
-      entry.target.classList.add('title-vis');
-      titleSplitObs.unobserve(entry.target);
-    });
-  }, { threshold: 0.15 });
-
-  document.querySelectorAll('.section__title').forEach(title => {
-    title.classList.remove('reveal'); // use split instead
-    const lines = title.innerHTML.split(/<br\s*\/?>/i);
-    title.innerHTML = lines.map(line =>
-      line.trim().split(/\s+/).filter(Boolean)
-        .map(w => `<span class="split-word"><span class="split-word__inner">${w}</span></span>`)
-        .join(' ')
-    ).join('<br>');
-    titleSplitObs.observe(title);
-  });
-})();
-
-// ===== BACK TO TOP =====
-if (backToTop) {
-  backToTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  });
-}
-
-// ===== TOAST HELPER =====
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._hideTimer);
-  t._hideTimer = setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-// ===== COPY ON CONTACT ITEMS =====
-document.querySelectorAll('.contact-item--copy').forEach(el => {
-  el.addEventListener('click', () => {
-    const text = el.dataset.copy;
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Copied to clipboard');
-      el.classList.add('copied');
-      setTimeout(() => el.classList.remove('copied'), 1200);
-    }).catch(() => showToast('Copy failed'));
-  });
-});
-
-// ===== CURSOR TRAIL =====
-(function() {
-  const TRAIL = 8;
-  const dots = [];
-  let mx = -200, my = -200;
-  const trail = document.getElementById('cursorTrail');
-  if (!trail) return;
-
-  for (let i = 0; i < TRAIL; i++) {
-    const d = document.createElement('div');
-    d.className = 'trail-dot';
-    const size = Math.max(2, 7 - i);
-    d.style.cssText = `width:${size}px;height:${size}px;opacity:${0.55 - i * 0.06};`;
-    trail.appendChild(d);
-    dots.push({ el: d, x: -200, y: -200 });
-  }
-
-  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-
-  (function loop() {
-    let px = mx, py = my;
-    dots.forEach((dot, i) => {
-      const lag = 0.25 + i * 0.04;
-      dot.x += (px - dot.x) * lag;
-      dot.y += (py - dot.y) * lag;
-      dot.el.style.left = dot.x + 'px';
-      dot.el.style.top  = dot.y + 'px';
-      px = dot.x; py = dot.y;
-    });
-    requestAnimationFrame(loop);
   })();
-})();
 
-// ===== BLUR REVEAL (Rauno-style) =====
-const blurObs = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (!entry.isIntersecting) return;
-    const siblings = [...entry.target.parentElement.querySelectorAll('.blur-in:not(.vis)')];
-    let delay = 0;
-    siblings.forEach(sib => {
-      sib.style.transitionDelay = delay + 'ms';
-      delay += 120;
-    });
-    entry.target.classList.add('vis');
-    blurObs.unobserve(entry.target);
-  });
-}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  /* ---------------- the terminal: a small shell over the page ---------------- */
+  const term = document.getElementById('term');
+  const out = document.getElementById('termOut');
+  const form = document.getElementById('termForm');
+  const input = document.getElementById('termIn');
+  const psEl = document.getElementById('termPs');
+  const titleEl = document.getElementById('termTitle');
+  const respawn = document.getElementById('termRespawn');
+  const history = [];
+  let histIdx = 0;
+  let cwd = '~';
 
-document.querySelectorAll('.blur-in').forEach(el => blurObs.observe(el));
+  const DIRS = Object.freeze({ '~': 'top', '~/work': 'work', '~/whoami': 'whoami', '~/contact': 'contact' });
+  const FILES = Object.freeze(['security.log', 'nasa.txt']);
 
-// ===== LIVE CLOCK (Tashkent) =====
-(function() {
-  const el = document.getElementById('liveClock');
-  if (!el) return;
-  function update() {
-    const now = new Date();
-    const time = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-      timeZone: 'Asia/Dushanbe'
-    });
-    el.textContent = time + ' · Dushanbe';
-  }
-  update();
-  setInterval(update, 1000);
-})();
+  const print = (text, cls) => {
+    const p = document.createElement('p');
+    if (cls) p.className = cls;
+    p.textContent = text;
+    out.appendChild(p);
+    out.scrollTop = out.scrollHeight;
+  };
+  const go = (url) => { if (url) window.open(url, url.startsWith('mailto:') ? '_self' : '_blank', 'noopener'); };
+  const jump = (id) => document.getElementById(id)?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+  const setCwd = (dir) => {
+    cwd = dir;
+    if (psEl) psEl.textContent = `bekha@dushanbe:${dir}$`;
+    if (titleEl) titleEl.textContent = `tty1  bekha@dushanbe:${dir}`;
+  };
+  const findProject = (q) => PROJECTS.find((p) => p.name.startsWith(q || '\u0000'));
+  const rowFor = (name) => rows.find((r) => rowName(r) === name);
 
-// ===== PARALLAX SECTION BG TEXT =====
-(function() {
-  const bgTexts = document.querySelectorAll('.section__bg-text');
-  if (!bgTexts.length) return;
-
-  let ticking = false;
-  function updateParallax() {
-    bgTexts.forEach(el => {
-      const section = el.closest('section');
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      // offset = how far the section center is from viewport center
-      const sectionCenter = rect.top + rect.height / 2;
-      const viewportCenter = window.innerHeight / 2;
-      const offset = (sectionCenter - viewportCenter) * 0.18;
-      el.style.transform = `translateY(calc(-50% + ${offset}px))`;
-    });
-    ticking = false;
+  function catProject(p) {
+    const row = rowFor(p.name);
+    const lines = [[p.name, 'hl']];
+    const ver = row?.querySelector('.row__ver')?.textContent?.trim();
+    if (ver) lines.push([ver]);
+    lines.push([p.url ? `url    ${p.url}` : 'url    private, on a VPS']);
+    const r = p.url ? pingCache.get(p.url) : null;
+    if (r) lines.push([`status ${describe(r)}`]);
+    return lines;
   }
 
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(updateParallax);
-      ticking = true;
-    }
-  }, { passive: true });
-
-  updateParallax();
-})();
-
-// ===== LANGUAGE SWITCHER =====
-(function() {
-  const T = {
-    en: {
-      // nav
-      'nav-about': 'About', 'nav-work': 'Work', 'nav-skills': 'Skills', 'nav-contact': 'Contact',
-      // hero
-      'hero-label': 'Full-Stack Developer & Builder',
-      'hero-status': 'Available for projects',
-      'hero-btn1': 'See my work', 'hero-btn2': "Let's talk",
-      'hero-desc': 'I design and ship <strong>real products</strong> — AI platforms,<br>mobile apps, e-commerce, bots. Solo. Fast.',
-      'meta-label-0': 'Projects shipped', 'meta-label-1': 'Languages', 'meta-label-2': 'Ideas',
-      'scroll-hint': 'scroll down',
-      // eyebrows
-      'eyebrow-0': 'About', 'eyebrow-1': 'Work', 'eyebrow-2': 'Skills', 'eyebrow-3': 'Contact',
-      // titles
-      'title-about': 'Who I<br>Am', 'title-work': 'Selected<br>Projects', 'title-skills': 'My Arsenal',
-      // about
-      'about-p1': "I'm Bekha — a self-driven developer who builds things people actually use. Whether it's an AI trading assistant, a Flutter app for ordering lunch, or a luxury fashion store, I care about the full picture: <em>design, performance, and product thinking.</em>",
-      'about-p2': "Started with Python, went deep into C, C++ and system programming. Now I ship <strong>full-stack products from scratch — solo.</strong> On the other side: I'm into cybersecurity and ethical hacking — understanding how systems break so I can build ones that don't.",
-      'tag-0': 'Full-Stack', 'tag-1': 'C++ / Systems', 'tag-2': 'Ethical Hacking', 'tag-3': 'CTF Player', 'tag-4': 'AI Builder', 'tag-5': 'Mobile Dev',
-      // skill cats
-      'skill-cat-0': 'Languages', 'skill-cat-1': 'Frontend', 'skill-cat-2': 'Backend', 'skill-cat-3': 'Cloud & Tools', 'skill-cat-4': 'AI & APIs', 'skill-cat-5': 'Cybersecurity',
-      // projects
-      'proj-desc-0': 'AI-powered crypto and stock trading platform. TradingView-style charting, P&L calendar journal, Gemini AI market analysis, broker integration, paper trading, and PWA support. Fully deployed on GitHub Pages.',
-      'proj-desc-1': 'Full Flutter mobile app for canteen ordering. Firebase backend, Riverpod state management, push notifications, admin panel, cart system, and real-time order tracking. Clean architecture, production-ready.',
-      'proj-desc-2': 'Pixel-perfect luxury fashion e-commerce. Playfair Display typography, product catalog, admin panel, checkout flow, premium minimal aesthetic. Pure HTML/CSS/JS — zero dependencies.',
-      'proj-desc-3': 'AI-powered Telegram trading signals bot. Real-time market analysis via OpenAI, audio/video processing with FFmpeg, runs 24/7 on VPS. Smart signal generation for traders.',
-      'proj-desc-4': 'Modern, undetectable VPN using VLESS + Reality (Xray-core). Traffic mimics normal HTTPS — fully bypasses DPI censorship. Automated server setup, custom client configs.',
-      'proj-desc-5': 'Custom CRM for real business use. Client management, deal tracking, modern frontend, structured backend. Built to replace expensive SaaS tools.',
-      'proj-desc-6': 'Full-featured Flask microblogging platform. User auth, posts, follows, SQLAlchemy ORM, database migrations, email support. Solid, production-structured Flask app.',
-      'proj-desc-7': 'Production Telegram bot with Flask webhooks and PostgreSQL message logging. Health check endpoints, structured database interactions, runs with uv package manager.',
-      // contact
-      'contact-cta': "Let's build<br><span class='contact__cta-accent'>something real.</span>",
-      'contact-label-0': 'Email', 'contact-label-1': 'LinkedIn', 'contact-label-2': 'Telegram',
-      // footer
-      'footer-credit': 'Built without limits.',
-      // bg text
-      'bg-about': 'ABOUT', 'bg-work': 'WORK', 'bg-skills': 'SKILLS', 'bg-contact': 'CONTACT',
+  const COMMANDS = {
+    help: () => [
+      ['the site is a filesystem. commands:', 'hl'],
+      ['  ls [dir]        list a directory (work, whoami, contact)'],
+      ['  cd <dir>        go there, the page follows'],
+      ['  cat <file>      read a project or a file, e.g. cat tradeboard'],
+      ['  run <name>      boot a live project in a BEKHA-OS window'],
+      ['  open <name>     open a live project in a new tab'],
+      ['  pwd, tree, whoami, stack, nasa, contact'],
+      ['  telegram | email | github | linkedin'],
+      ['  theme <name>    amber, green or white'],
+      ['  lang en|ru      English or Russian'],
+      ['  reboot          power-cycle the screen'],
+      ['  intro           replay the opening shot'],
+      ['  whereami        where you are, and how far from me'],
+      ['  snake           play. arrows or WASD'],
+      ['  hack            do not'],
+      ['  sound on|off    CRT hum and key clicks'],
+      ['  sudo hire-me    you know what this does'],
+      ['  clear, exit'],
+    ],
+    whoami: () => {
+      const lines = [[t('whoami1')], [t('whoami2')]];
+      if (github.last) lines.push([t('lastPush', ago(github.last.at), github.last.name), 'echo']);
+      return lines;
     },
-    ru: {
-      'nav-about': 'Обо мне', 'nav-work': 'Проекты', 'nav-skills': 'Навыки', 'nav-contact': 'Контакт',
-      'hero-label': 'Full-Stack Разработчик',
-      'hero-status': 'Открыт к проектам',
-      'hero-btn1': 'Мои проекты', 'hero-btn2': 'Написать',
-      'hero-desc': 'Строю <strong>реальные продукты</strong> — ИИ, мобайл, боты. Один. Быстро.',
-      'meta-label-0': 'Проектов сдано', 'meta-label-1': 'Языков', 'meta-label-2': 'Идей',
-      'scroll-hint': 'листай вниз',
-      'eyebrow-0': 'Обо мне', 'eyebrow-1': 'Проекты', 'eyebrow-2': 'Навыки', 'eyebrow-3': 'Контакт',
-      'title-about': 'Кто я<br>такой', 'title-work': 'Избранные<br>Проекты', 'title-skills': 'Мой Арсенал',
-      'about-p1': "Я Беха — разработчик, который создаёт вещи которыми реально пользуются люди. Торговый ИИ-помощник, мобильное приложение для столовой, люксовый магазин — мне важна вся картина: <em>дизайн, производительность и продуктовое мышление.</em>",
-      'about-p2': "Начал с Python, ушёл глубоко в C, C++ и системное программирование. Сейчас создаю <strong>full-stack продукты с нуля — один.</strong> Параллельно: кибербезопасность и этичный хакинг — понимаю как системы ломаются, чтобы строить те, которые не сломаются.",
-      'tag-0': 'Full-Stack', 'tag-1': 'C++ / Системы', 'tag-2': 'Этичный Хакинг', 'tag-3': 'CTF Игрок', 'tag-4': 'ИИ Разработчик', 'tag-5': 'Мобильная разработка',
-      'skill-cat-0': 'Языки', 'skill-cat-1': 'Фронтенд', 'skill-cat-2': 'Бэкенд', 'skill-cat-3': 'Облако и Инструменты', 'skill-cat-4': 'ИИ и API', 'skill-cat-5': 'Кибербезопасность',
-      'proj-desc-0': 'Маркетплейс аккаунтов для игр и Steam в Таджикистане — от и до сделал один. Защищённые эскроу-сделки между покупателем и продавцом без посредника, дашборды продавца и покупателя для управления объявлениями. Next.js со статическим экспортом на бэкенде Supabase, развёрнут на GitHub Pages.',
-      'proj-desc-1': 'ИИ-инструмент для обучения трейдингу — рисует прямо на живом графике: трендовые линии, уровни поддержки/сопротивления, зоны — анимированно, как мелом, синхронно с объяснением. Несколько ИИ-провайдеров (OpenAI, Anthropic, Gemini, Cerebras), полный набор инструментов рисования в стиле TradingView, чёрно-белый дизайн доски. Только обучение — никаких сигналов.',
-      'proj-desc-2': 'Pixel-perfect люксовый fashion e-commerce с нуля — чистый HTML, CSS и JavaScript, без единой зависимости. Типографика Playfair Display, полный каталог товаров, панель администратора, оформление заказа и бэкенд на Supabase для синхронизации корзины между устройствами.',
-      'proj-desc-3': 'Система заказа еды в университетской столовой — два клиента на одном бэкенде Supabase: мобильное приложение на Expo/React Native и веб-клиент на Capacitor. Меню, бонусы, корзина и отслеживание заказов в реальном времени.',
-      'proj-desc-4': 'Система учёта склада пиломатериалов: остатки по породам и сечениям в реальном времени, закупочные и продажные цены, журнал сделок, текущая прибыль. React, TypeScript, Vite, Tailwind CSS, CI/CD на GitHub Actions.',
-      'proj-desc-5': 'Концепт и прототип платформы единого абонемента в залы: один абонемент — доступ в любой зал-партнёр. Проработана бизнес-модель — тарифы, выплаты залам за визит, B2B-доступ для компаний — на основе реального анализа рынка и цен, затем сделаны лендинг и интерактивный прототип приложения.',
-      'proj-desc-6': 'Быстрый одностраничный сайт кампуса — чистый HTML, CSS и JavaScript без зависимостей, заточен под мгновенную загрузку и понятный интерфейс.',
-      'proj-desc-7': 'ИИ-бот для торговых сигналов в Telegram. Анализ рынка через OpenAI API, обработка аудио и видео через FFmpeg, работает 24/7 на VPS с логированием и health-check.',
-      'proj-desc-8': 'Самостоятельное исследование мирового рынка кибербезопасности: объём и прогнозы роста по регионам, переход от периметровой защиты к data-centric резилентности, бизнес-архитектуры и технические парадигмы, меняющие индустрию до 2030 года.',
-      'proj-desc-9': 'Исследование операционных моделей private equity в Центральной Азии: геополитический контекст, регуляторная среда от национальных кодексов до AIFC, стратегия создания стоимости в портфельных компаниях под ESG-мандатами.',
-      'contact-cta': "Давай создадим<br><span class='contact__cta-accent'>что-то реальное.</span>",
-      'contact-label-0': 'Email', 'contact-label-1': 'LinkedIn', 'contact-label-2': 'Telegram',
-      'footer-credit': 'Создано без ограничений.',
-      'bg-about': 'ОБО МНЕ', 'bg-work': 'ПРОЕКТЫ', 'bg-skills': 'НАВЫКИ', 'bg-contact': 'КОНТАКТ',
-    }
+    pwd: () => [[cwd === '~' ? HOME : HOME + cwd.slice(1)]],
+    tree: () => [['~'], ['|-- work/'], ...PROJECTS.map((p, i) => [`|   ${i === PROJECTS.length - 1 ? '`--' : '|--'} ${p.name}`]), ['|-- whoami/'], ['|-- contact/'], ['|-- security.log'], ['`-- nasa.txt'], [`3 directories, ${PROJECTS.length + 2} files`, 'echo']],
+    projects: () => PROJECTS.map((p) => [`  ${p.name.padEnd(18)}${p.what}`]).concat([['try: cat tradeboard, or open lunar', 'echo']]),
+    stack: () => [['TypeScript, React, Next.js, Vite, Tailwind'], ['Supabase, PostgreSQL, Flask'], ['Expo, React Native, Flutter'], ['Python, OpenAI, Anthropic, Gemini, Telegram Bot API']],
+    contact: () => [['telegram  @sabrsf0'], ['email     pythonhack000@gmail.com'], ['github    pythonhack000'], ['type a name to open it, e.g. telegram', 'echo']],
+    telegram: () => { go(LINKS.telegram); return [['opening telegram...']]; },
+    email: () => { go(LINKS.email); return [['opening mail...']]; },
+    github: () => { go(LINKS.github); return [['opening github...']]; },
+    linkedin: () => { go(LINKS.linkedin); return [['opening linkedin...']]; },
+    date: () => [[new Date().toLocaleString('en-GB', { timeZone: TZ, dateStyle: 'full', timeStyle: 'short' }) + ' in Dushanbe']],
+    nasa: () => [[t('nasa1'), 'hl'], [t('nasa2')], [t('nasa3'), 'echo']],
+    exit: () => { setTimeout(closeShell, 250); return [['logout']]; },
+    reboot: () => { setTimeout(reboot, 300); return [['the system is going down for reboot NOW']]; },
+    whereami: () => {
+      const v = window.bekhaGlobe?.visitor?.();
+      if (!v) return [['whereami: no globe loaded', 'err']];
+      const ru = I.lang === 'ru';
+      if (v.km <= 150) return [[ru ? `ты в ${v.ru}. мы соседи. заходи на чай.` : `you are in ${v.en}. we are neighbours. come over.`, 'hl']];
+      return [
+        [ru ? `ты где-то тут: ${v.ru} (${v.tz || 'часовой пояс неизвестен'})` : `you are around ${v.en} (${v.tz || 'unknown time zone'})`, 'hl'],
+        [ru ? `${v.km} км до Душанбе. посмотри на глобус: туда бежит пакет.` : `${v.km} km to Dushanbe. look at the globe: a packet is on its way.`],
+        [ru ? 'это по часовому поясу браузера, ни IP, ни геолокации.' : 'guessed from your browser time zone. no IP, no geolocation.', 'echo'],
+      ];
+    },
+    intro: () => { try { sessionStorage.removeItem('intro'); } catch (e) { /* plays anyway after reload */ } setTimeout(() => location.reload(), 300); return [['replaying the opening shot...']]; },
+    clear: () => { out.textContent = ''; return []; },
   };
 
-  let lang = 'en';
-  const btn = document.getElementById('langToggle');
-  const cur = document.getElementById('langCurrent');
-  if (!btn) return;
+  function ls(arg) {
+    const target = arg ? (arg.startsWith('~') ? arg : (cwd === '~' ? `~/${arg}` : `${cwd}/${arg}`)).replace(/\/$/, '') : cwd;
+    if (target === '~') return [['work/  whoami/  contact/  security.log  nasa.txt']];
+    if (target === '~/work') return COMMANDS.projects();
+    if (target === '~/whoami') return [['neofetch  security.log']];
+    if (target === '~/contact') return [['telegram  email  github  linkedin']];
+    return [[`ls: cannot access '${arg}': no such directory`, 'err']];
+  }
 
-  const CHARS_RU = 'АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзиклмнопрстуфхцчшщъыьэюя';
-  const CHARS_EN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@$%&';
+  function cd(arg) {
+    if (!arg || arg === '~' || arg === '/' || arg === HOME) { setCwd('~'); jump('top'); return []; }
+    if (arg === '..') { setCwd('~'); jump('top'); return []; }
+    const clean = arg.replace(/\/$/, '').replace(/^~\//, '').replace(/^\.\//, '');
+    const dir = `~/${clean}`;
+    if (DIRS[dir]) { setCwd(dir); jump(DIRS[dir]); return []; }
+    if (findProject(clean)) return [[`cd: ${clean}: is a project, not a directory. try cat ${clean} or open ${clean}`, 'err']];
+    return [[`cd: no such directory: ${arg}`, 'err']];
+  }
 
-  function scrambleEl(el, finalHTML, duration = 480, isHTML = false, chars = CHARS_EN) {
-    const finalText = isHTML
-      ? finalHTML.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-      : finalHTML;
+  function cat(arg) {
+    if (!arg) return [['cat: what? e.g. cat tradeboard', 'err']];
+    const clean = arg.replace(/^.*\//, '');
+    if (clean === 'security.log') return Array.from(document.querySelectorAll('.log li')).map((li) => [li.textContent.trim()]);
+    if (clean === 'nasa.txt') return COMMANDS.nasa();
+    const p = findProject(clean);
+    if (p) return catProject(p);
+    if (DIRS[`~/${clean}`]) return [[`cat: ${clean}: is a directory`, 'err']];
+    return [[`cat: ${clean}: no such file`, 'err']];
+  }
 
-    let start = null;
-    function frame(ts) {
-      if (!start) start = ts;
-      const progress = Math.min((ts - start) / duration, 1);
-      if (progress < 1) {
-        const fixedLen = Math.floor(progress * finalText.length);
-        let scrambled = finalText.slice(0, fixedLen);
-        for (let i = fixedLen; i < finalText.length; i++) {
-          scrambled += finalText[i] === ' ' ? ' ' : chars[Math.floor(Math.random() * chars.length)];
-        }
-        el.textContent = scrambled;
-        requestAnimationFrame(frame);
+  function run(raw) {
+    const line = raw.trim();
+    if (!line) return;
+    print(`${cwd}$ ${line}`, 'echo');
+    const [cmd, ...args] = line.toLowerCase().split(/\s+/);
+    const say = (lines) => lines.forEach(([text, cls]) => print(text, cls));
+
+    if (cmd === 'sudo') {
+      if (args.join(' ') === 'hire-me' || args.join(' ') === 'hire me') {
+        print('[sudo] password for visitor: ********');
+        print('access granted. opening a chat with Bekha...', 'hl');
+        go(LINKS.telegram);
       } else {
-        if (isHTML) {
-          el.innerHTML = finalHTML;
-        } else {
-          el.textContent = finalHTML;
-        }
+        print('visitor is not in the sudoers file. This incident will be reported.', 'err');
       }
+      return;
     }
-    requestAnimationFrame(frame);
+    if (cmd === 'theme') {
+      const name = args[0];
+      if (!THEMES.includes(name)) { print(`themes: ${THEMES.join(', ')}. e.g. theme green`, 'err'); return; }
+      if (name === 'amber') delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = name;
+      try { localStorage.setItem('theme', name === 'amber' ? '' : name); } catch (e) { /* not saved, still applied */ }
+      print(`phosphor set to ${name}.`, 'hl');
+      return;
+    }
+    if (cmd === 'lang') {
+      if (!I.set(args[0])) { print('lang: en or ru', 'err'); return; }
+      print(t('langSet'), 'hl');
+      return;
+    }
+    if (cmd === 'rm') { print('nice try.', 'err'); return; }
+    const X = window.bekhaExtras;
+    if (cmd === 'snake') {
+      if (!X) { print('snake is not installed.', 'err'); return; }
+      if (window.matchMedia('(hover: none)').matches) { print('snake needs a keyboard. try it on a laptop.', 'err'); return; }
+      X.snake({ out, input, print, setWin });
+      return;
+    }
+    if (cmd === 'hack') { if (X) X.breach(); return; }
+    if (cmd === 'sound') {
+      if (!X) { print('no sound card.', 'err'); return; }
+      const want = args[0] === 'off' ? false : args[0] === 'on' ? true : !X.sound.on;
+      X.sound.set(want);
+      print(`sound ${want ? 'on: CRT hum and key clicks' : 'off'}.`, 'hl');
+      return;
+    }
+    if (cmd === 'ls') { say(ls(args[0])); return; }
+    if (cmd === 'cd') { say(cd(args[0])); return; }
+    if (cmd === 'cat' || cmd === 'less' || cmd === 'more') { say(cat(args[0])); return; }
+    if (cmd === 'run') {
+      if (!window.bekhaOS || !window.bekhaOS.run(args[0] || '\u0000')) { print(`run: ${args[0] || ''}: no live project by that name. type ls work`, 'err'); return; }
+      print(`booting ${args[0]}...`, 'hl');
+      return;
+    }
+    if (cmd === 'open') {
+      const target = findProject(args[0]);
+      if (!target) { print(`no such project: ${args[0] || ''}. type ls work`, 'err'); return; }
+      if (!target.url) { print(`${target.name} runs privately on a VPS. Ask me for a demo: type telegram`); return; }
+      print(`opening ${target.name}...`, 'hl');
+      go(target.url);
+      return;
+    }
+    const fn = Object.prototype.hasOwnProperty.call(COMMANDS, cmd) ? COMMANDS[cmd] : null;
+    if (!fn) { print(`command not found: ${cmd}. type help`, 'err'); return; }
+    say(fn());
   }
 
-  function applyLang(l) {
-    const t = T[l];
+  /* boot log, also used by reboot */
+  const READY = () => t('ready');
+  function boot(animated) {
+    if (!out) return;
+    if (!animated) { print(READY(), 'hl'); return; }
+    const lines = ['[  ok  ] phosphor warm', `[  ok  ] mounted /work: ${PROJECTS.length} projects`, '[  ok  ] loaded neofetch, security.log', READY()];
+    lines.forEach((line, i) => setTimeout(() => print(line, i === lines.length - 1 ? 'hl' : 'echo'), 900 + i * BOOT_STEP_MS));
+  }
 
-    const allEls = [];
+  function reboot() {
+    window.bekhaExtras?.sound.thunk();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    const old = document.querySelector('.power');
+    if (old && !REDUCED) {
+      const fresh = old.cloneNode(true);
+      old.replaceWith(fresh);
+    }
+    document.documentElement.classList.remove('seen');
+    openShell();
+    out.textContent = '';
+    setCwd('~');
+    if (nameEl) setTimeout(() => decrypt(nameEl, 1100), REDUCED ? 0 : 650);
+    boot(!REDUCED);
+  }
 
-    // nav + drawer
-    const navKeys = ['nav-about','nav-work','nav-skills','nav-contact'];
-    document.querySelectorAll('.nav__links li a').forEach((a,i) => { if(t[navKeys[i]]) allEls.push([a, t[navKeys[i]], false]); });
-    document.querySelectorAll('.drawer__link').forEach((a,i) => { if(t[navKeys[i]]) allEls.push([a, t[navKeys[i]], false]); });
+  /* window controls */
+  function setWin(state) {
+    term.classList.remove('is-min', 'is-max', 'is-closed');
+    if (state) term.classList.add(`is-${state}`);
+    term.querySelector('[data-win="min"]')?.setAttribute('aria-pressed', String(state === 'min'));
+    term.querySelector('[data-win="max"]')?.setAttribute('aria-pressed', String(state === 'max'));
+    respawn.hidden = state !== 'closed';
+    document.body.style.overflow = state === 'max' ? 'hidden' : '';
+  }
+  function closeShell() { setWin('closed'); respawn.focus(); }
+  function openShell() { setWin(null); }
 
-    // hero desc
-    const heroDesc = document.getElementById('heroDesc');
-    if (heroDesc && t['hero-desc']) allEls.push([heroDesc, t['hero-desc'], true]);
+  if (term && out && form && input && respawn) {
+    boot(firstVisit && !REDUCED);
 
-    // hero label
-    const heroLabel = document.getElementById('typewriterLabel');
-    if (heroLabel) allEls.push([heroLabel, t['hero-label'], false]);
+    term.querySelectorAll('[data-win]').forEach((btn) => btn.addEventListener('click', () => {
+      const want = btn.dataset.win;
+      if (want === 'close') { closeShell(); return; }
+      const on = term.classList.contains(`is-${want}`);
+      setWin(on ? null : want);
+      if (!on && want === 'max') input.focus();
+    }));
+    respawn.addEventListener('click', () => {
+      openShell();
+      out.textContent = '';
+      setCwd('~');
+      print('respawned. bash 5.2, a fresh shell.', 'hl');
+      input.focus();
+    });
 
-    // hero status
-    const heroStatus = document.querySelector('.hero__status');
-    if (heroStatus) allEls.push([heroStatus, '<span class="status-dot"></span>' + t['hero-status'], true]);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = input.value;
+      if (v.trim()) { history.push(v); histIdx = history.length; }
+      input.value = '';
+      run(v);
+    });
 
-    // hero buttons
-    const btns = document.querySelectorAll('.hero__actions .btn span');
-    if (btns[0]) allEls.push([btns[0], t['hero-btn1'], false]);
-    if (btns[1]) allEls.push([btns[1], t['hero-btn2'], false]);
+    const WORDS = Object.keys(COMMANDS).concat(['ls', 'cd', 'cat', 'open', 'run', 'sudo hire-me', 'theme', 'snake', 'hack', 'sound on', 'sound off', 'lang en', 'lang ru']);
+    input.addEventListener('keydown', (e) => {
+      if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') window.bekhaExtras?.sound.click();
+      if (e.key === 'Tab' && input.value.trim()) {
+        const v = input.value.toLowerCase().trim();
+        const [cmd] = v.split(/\s+/);
+        let pool = WORDS;
+        if (cmd === 'open' || cmd === 'run') pool = PROJECTS.map((p) => `${cmd} ${p.name}`);
+        if (cmd === 'cat') pool = PROJECTS.map((p) => `cat ${p.name}`).concat(FILES.map((f) => `cat ${f}`));
+        if (cmd === 'cd' || cmd === 'ls') pool = ['work', 'whoami', 'contact'].map((d) => `${cmd} ${d}`);
+        if (cmd === 'theme') pool = THEMES.map((t) => `theme ${t}`);
+        const hits = pool.filter((w) => w.startsWith(v));
+        if (hits.length === 1) input.value = hits[0] + ' ';
+        else if (hits.length > 1) print(hits.join('   '), 'echo');
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'ArrowUp' && histIdx > 0) { histIdx -= 1; input.value = history[histIdx]; e.preventDefault(); }
+      if (e.key === 'ArrowDown') { histIdx = Math.min(history.length, histIdx + 1); input.value = history[histIdx] ?? ''; e.preventDefault(); }
+      if (e.key === 'l' && e.ctrlKey) { out.textContent = ''; e.preventDefault(); }
+    });
 
-    // meta labels
-    document.querySelectorAll('.meta-label').forEach((el,i) => { if(t['meta-label-'+i]) allEls.push([el, t['meta-label-'+i], false]); });
-
-    // scroll hint
-    const scrollHintText = document.querySelector('.scroll-hint-text');
-    if (scrollHintText) allEls.push([scrollHintText, t['scroll-hint'], false]);
-
-    // eyebrows
-    document.querySelectorAll('.section__eyebrow .label').forEach((el,i) => { if(t['eyebrow-'+i]) allEls.push([el, t['eyebrow-'+i], false]); });
-
-    // section titles
-    const titleEls = document.querySelectorAll('.section__title');
-    const titleKeys = ['title-about','title-work','title-skills'];
-    titleEls.forEach((el,i) => {
-      if(t[titleKeys[i]]) {
-        allEls.push([el, t[titleKeys[i]], true]);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && term.classList.contains('is-max')) { setWin(null); return; }
+      const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName ?? '');
+      if (e.key === '/' && !typing) {
+        e.preventDefault();
+        if (term.classList.contains('is-closed') || term.classList.contains('is-min')) openShell();
+        input.focus();
       }
     });
-
-    // about paragraphs
-    const paras = document.querySelectorAll('.about__p');
-    if(paras[0] && t['about-p1']) allEls.push([paras[0], t['about-p1'], true]);
-    if(paras[1] && t['about-p2']) allEls.push([paras[1], t['about-p2'], true]);
-
-    // about tags
-    document.querySelectorAll('.about__tags .tag').forEach((el,i) => { if(t['tag-'+i]) allEls.push([el, t['tag-'+i], false]); });
-
-    // skill categories
-    document.querySelectorAll('.skill-cat__name').forEach((el,i) => { if(t['skill-cat-'+i]) allEls.push([el, t['skill-cat-'+i], false]); });
-
-    // project descriptions
-    document.querySelectorAll('.project__desc').forEach((el,i) => { if(t['proj-desc-'+i]) allEls.push([el, t['proj-desc-'+i], false]); });
-
-    // contact
-    const cta = document.querySelector('.contact__cta');
-    if(cta && t['contact-cta']) allEls.push([cta, t['contact-cta'], true]);
-    document.querySelectorAll('.contact-item__label').forEach((el,i) => { if(t['contact-label-'+i]) allEls.push([el, t['contact-label-'+i], false]); });
-
-    // footer
-    const credit = document.querySelector('.footer__credit');
-    if(credit) allEls.push([credit, t['footer-credit'], false]);
-
-    // bg texts
-    document.querySelectorAll('.section__bg-text').forEach((el,i) => { if(t['bg-'+['about','work','skills','contact'][i]]) allEls.push([el, t['bg-'+['about','work','skills','contact'][i]], false]); });
-
-    // lang button
-    allEls.push([cur, l.toUpperCase(), false]);
-
-    // fire all with staggered delay
-    const chars = l === 'ru' ? CHARS_RU : CHARS_EN;
-    allEls.forEach(([el, val, isHTML], idx) => {
-      const delay = idx * 18;
-      const dur = 320 + Math.random() * 200;
-      setTimeout(() => scrambleEl(el, val, dur, isHTML, chars), delay);
-    });
-
-    // fix section titles after scramble
-    setTimeout(() => {
-      document.querySelectorAll('.section__title').forEach(el => {
-        el.classList.remove('title-vis');
-        setTimeout(() => el.classList.add('title-vis'), 50);
-      });
-    }, allEls.length * 18 + 500);
   }
 
-  btn.addEventListener('click', () => {
-    lang = lang === 'en' ? 'ru' : 'en';
-    applyLang(lang);
-    markLangHintSeen();
+  /* ---------------- effects you see without typing ---------------- */
+
+  /* the background is this page's own running code, lit where the pointer goes */
+  const srcDim = document.getElementById('srcDim');
+  const srcLit = document.getElementById('srcLit');
+  if (srcDim && srcLit) {
+    const own = [decrypt, window.bekhaGlobe?.frame, asciiWord, check, showPing, scan, run, ls, cd, cat, boot, reboot, setWin]
+      .filter(Boolean).map((fn) => fn.toString()).join('\n\n');
+    const need = Math.ceil(window.innerHeight / 17.4) * Math.ceil(window.innerWidth / 460) * 60 + 2000;
+    let text = own;
+    while (text.length < need) text += '\n\n' + own;
+    srcDim.textContent = text;
+    srcLit.textContent = text;
+    if (!REDUCED && window.matchMedia('(hover: hover)').matches) {
+      const root = document.documentElement;
+      let mx = -999, my = -999, queued = false;
+      const paint = () => { root.style.setProperty('--mx', `${mx}px`); root.style.setProperty('--my', `${my}px`); queued = false; };
+      window.addEventListener('pointermove', (e) => {
+        mx = e.clientX; my = e.clientY;
+        root.style.setProperty('--lamp', '190px');
+        if (!queued) { queued = true; requestAnimationFrame(paint); }
+      }, { passive: true });
+      document.addEventListener('pointerleave', () => root.style.setProperty('--lamp', '0px'));
+    }
+  }
+
+  /* headings decrypt once, as they scroll into view */
+  if (!REDUCED) {
+    const heads = Array.from(document.querySelectorAll('.h2, .h3, .contact__h'));
+    heads.forEach((el) => { el.dataset.text = el.textContent; });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { decrypt(e.target, 900); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -15% 0px' });
+    heads.forEach((el) => io.observe(el));
+  }
+
+  /* the name and the contact labels re-scramble under the pointer */
+  const hoverScramble = (el, ms) => {
+    let busy = false;
+    el.addEventListener('pointerenter', () => {
+      if (busy || REDUCED) return;
+      busy = true;
+      decrypt(el, ms);
+      setTimeout(() => { busy = false; }, ms + 450);
+    });
+  };
+  document.querySelectorAll('.big').forEach((a) => {
+    const label = a.querySelector('.big__label');
+    if (!label) return;
+    let busy = false;
+    a.addEventListener('pointerenter', () => { if (busy || REDUCED) return; busy = true; decrypt(label, 450); setTimeout(() => { busy = false; }, 900); });
   });
 
-  // First-time nudge: show a tooltip + pulsing dot pointing at the
-  // language switch so new visitors realize it's clickable. The bubble
-  // fades on its own, but the pulsing dot keeps coming back on every
-  // visit until they've actually clicked the button once — a missed
-  // tooltip shouldn't silently kill the hint forever.
-  const tip = document.getElementById('langTip');
-  const dot = btn.querySelector('.nav__lang-dot');
-  function hideLangTip() {
-    if (tip) tip.classList.remove('is-visible');
+  /* the sound switch in the top bar */
+  const soundBtn = document.getElementById('soundBtn');
+  if (soundBtn && window.bekhaExtras) {
+    const label = (on) => { soundBtn.textContent = t(on ? 'soundOn' : 'soundOff'); soundBtn.setAttribute('aria-pressed', String(on)); };
+    document.addEventListener('bekha:lang', () => label(window.bekhaExtras.sound.on));
+    label(window.bekhaExtras.sound.on);
+    soundBtn.addEventListener('click', () => window.bekhaExtras.sound.set(!window.bekhaExtras.sound.on));
+    document.addEventListener('bekha:sound', (e) => label(e.detail));
   }
-  function markLangHintSeen() {
-    hideLangTip();
-    if (dot) dot.classList.add('is-hidden');
-    try { localStorage.setItem('langHintSeen', '1'); } catch (e) {}
+
+  /* scroll progress, drawn as a terminal progress bar */
+  const prog = document.getElementById('prog');
+  if (prog) {
+    const CELLS = 20;
+    let queued = false;
+    const draw = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      const full = Math.round(p * CELLS);
+      prog.textContent = `[${'#'.repeat(full)}${'-'.repeat(CELLS - full)}] ${String(Math.round(p * 100)).padStart(3, ' ')}%`;
+      queued = false;
+    };
+    window.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(draw); } }, { passive: true });
+    draw();
   }
-  try {
-    if (!localStorage.getItem('langHintSeen')) {
-      if (tip) {
-        setTimeout(() => tip.classList.add('is-visible'), 700);
-        setTimeout(hideLangTip, 7000);
-      }
-    } else if (dot) {
-      dot.classList.add('is-hidden');
-    }
-  } catch (e) {}
+
+  /* a language switch repaints what the scripts wrote */
+  document.addEventListener('bekha:lang', () => {
+    if (uptimeText) uptimeText.textContent = t(...uptimeState);
+    paintGithub();
+    const on = rows.find((r) => r.classList.contains('is-on'));
+    if (on) showPing(on);
+  });
+
+  /* ---------------- scroll: each section prints itself as it comes into view ---------------- */
+  if (!REDUCED && 'IntersectionObserver' in window) {
+    document.documentElement.classList.add('rv-on');
+    const groups = [
+      ['#work', '.scan__head, .row, .done, .uptime'],
+      ['.neo', '.neo__list > div, .neo__user, .neo__swatch, .neo__cap'],
+      ['.sec', '.h3, .log li'],
+      ['#contact', '.contact__lead, .links li'],
+    ];
+    groups.forEach(([host, sel]) => {
+      const root = document.querySelector(host);
+      if (!root) return;
+      root.querySelectorAll(sel).forEach((el, i) => { el.classList.add('rv'); el.style.setProperty('--i', String(i)); });
+    });
+
+    /* the command line above each section types itself, once */
+    const typeOut = (el) => {
+      const ps = el.querySelector('.prompt__ps');
+      const text = el.textContent.replace(ps ? ps.textContent : '', '').trim();
+      el.textContent = '';
+      if (ps) el.append(ps, ' ');
+      const span = document.createElement('span');
+      el.appendChild(span);
+      el.classList.add('is-typing');
+      let i = 0;
+      const step = () => {
+        span.textContent = text.slice(0, ++i);
+        if (i < text.length) setTimeout(step, 28 + Math.random() * 40);
+        else setTimeout(() => el.classList.remove('is-typing'), 500);
+      };
+      step();
+    };
+
+    const watch = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        el.classList.add('in');
+        if (el.classList.contains('cmd')) typeOut(el);
+        watch.unobserve(el);
+      });
+    }, { rootMargin: '0px 0px -18% 0px', threshold: 0.05 });
+    document.querySelectorAll('#work, .neo, .sec, #contact, main .cmd').forEach((el) => watch.observe(el));
+  }
+
+  /* after the opening shot the name decrypts once more, in front of the visitor */
+  document.addEventListener('bekha:intro-done', () => { if (nameEl) decrypt(nameEl, 900); });
+
+  /* a small handle for fx.js: type into the shell as if someone were at the keyboard (run() echoes the line itself) */
+  window.bekhaShell = {
+    run: (line) => { if (input && !term.classList.contains('is-closed')) run(line); },
+    print: (text, cls) => print(text, cls),
+    input,
+  };
 })();
