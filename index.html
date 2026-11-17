@@ -1,196 +1,581 @@
-<!doctype html>
-<html lang="en" data-type="service" data-radius="soft" data-buttons="arrow" data-motion>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bekha: full-stack developer in Dushanbe</title>
-<meta name="description" content="Web apps, online stores, mobile apps and Telegram bots, designed and built by one developer from the first screen to the live server.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Bekha: full-stack developer in Dushanbe">
-<meta property="og:description" content="Web apps, online stores, mobile apps and Telegram bots, built by one developer.">
-<meta property="og:image" content="share.jpg">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta name="theme-color" content="#eef0f3">
-<link rel="canonical" href="https://pythonhack000.github.io/">
-<meta name="site-kind" content="other">
-<meta name="page-type" content="service">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..700&family=Hanken+Grotesk:wght@400..600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/system.css">
-<link rel="stylesheet" href="assets/ui/cards.css">
-<link rel="stylesheet" href="assets/motion/motion.css">
-<link rel="stylesheet" href="assets/layout/layout.css">
-<link rel="stylesheet" href="assets/icons/icon.css">
-<link rel="stylesheet" href="assets/diagrams/diagram.css">
-<style>
-:root {
-  --p-bg: #eef0f3; --p-surface: #e2e5ea; --p-ink: #0b0c0e; --p-muted: #5d6470;
-  --p-accent: #1f2de6; --p-accent-ink: #ffffff; --p-action: #1f2de6; --p-action-ink: #ffffff;
-  --p-inv-bg: #0b0c0e; --p-inv-surface: #17181a; --p-inv-ink: #eef0f3; --p-inv-muted: #8e8f92;
-  --p-inv-accent: #eef0f3; --p-inv-accent-ink: #0b0c0e; --p-inv-action: #eef0f3; --p-inv-action-ink: #0b0c0e;
-  --font-display: "Newsreader", Georgia, serif;
-  --font-text: "Hanken Grotesk", system-ui, sans-serif;
-  --display-weight: 400;
-  --display-tracking: -0.018em;
-  --display-tracking-xl: -0.025em;
-}
-</style>
-<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
-<script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
-<link rel="modulepreload" href="assets/moments/moments.js">
-<link rel="modulepreload" href="assets/moments/lib.js">
-<link rel="modulepreload" href="assets/moments/photo-chapters/moment.js">
-<style>
-  #services .panel { --p-h: 590px; background: var(--g-alt); border: 1px solid var(--line); }
-  #services .rows { margin: 0; }
-  .rows .rows__name small { display: block; margin-top: var(--s-1); font-weight: 400; color: var(--muted); font-size: var(--t-body); }
-  @media (max-width: 1279px) { #services .panel { --p-h: 440px; } }
-  @media (max-width: 1023px) { #services .panel { --p-h: 340px; } }
-  .mo-ph__ch .link { margin-top: var(--s-2); }
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEKHA — Full-Stack Developer</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css?v=3"/>
 </head>
 <body>
-<!-- type: service
-     deal: hero split (re-dealt from photo: no portrait to show), nav nav-split (re-dealt from nav-mega: a one-page site
-     has no link columns), close close-type, footer footer-columns, rhythm dark-band (the work), buttons arrow, mark arc
-     palette cool-grey-cobalt, type newsreader (work-sans failed hero-lines), radius soft
-     moments: photo-chapters in #work -->
 
-<header class="nav nav--split">
-  <div class="wrap nav__bar">
-    <a class="skip-link" href="#top">Skip to content</a>
-    <nav class="nav__links" aria-label="Main">
-      <div class="nav__item"><a class="nav__link" href="#work">Work</a></div>
-      <div class="nav__item"><a class="nav__link" href="#services">Services</a></div>
-      <div class="nav__item"><a class="nav__link" href="#contact">Contact</a></div>
-    </nav>
-    <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>Bekha</a>
-    <div class="nav__actions">
-      <a class="btn btn--primary" href="mailto:pythonhack000@gmail.com?subject=Project">Email Bekha</a>
+  <!-- SCROLL PROGRESS -->
+  <div id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- PRELOADER -->
+  <div id="preloader" aria-hidden="true">
+    <div class="pre__num mono" id="preNum">000</div>
+    <div class="pre__bar"><div class="pre__bar-fill" id="preBarFill"></div></div>
+    <div class="pre__label mono">Loading</div>
+  </div>
+
+  <!-- CURSOR -->
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+  <div id="cursor-label"></div>
+
+  <!-- SPOTLIGHT -->
+  <div id="spotlight" aria-hidden="true"></div>
+
+  <!-- PARTICLE CANVAS -->
+  <canvas id="particleCanvas" aria-hidden="true"></canvas>
+
+  <!-- NOISE OVERLAY -->
+  <div class="noise"></div>
+
+  <!-- SCANLINES -->
+  <div class="scanlines"></div>
+
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <a href="#" class="nav__logo">BEKHA<span class="dot">.</span></a>
+    <ul class="nav__links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav__lang-wrap">
+      <button class="nav__lang" id="langToggle" aria-label="Switch language">
+        <span id="langCurrent">EN</span>
+        <span class="nav__lang-dot" aria-hidden="true"></span>
+      </button>
+      <span class="nav__lang-tip" id="langTip">RU / EN</span>
     </div>
-    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
-      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <button class="nav__toggle" id="navToggle" aria-label="menu">
+      <span></span><span></span>
     </button>
+  </nav>
+
+  <!-- MOBILE DRAWER -->
+  <div class="drawer" id="drawer">
+    <a href="#about" class="drawer__link">About</a>
+    <a href="#work" class="drawer__link">Work</a>
+    <a href="#skills" class="drawer__link">Skills</a>
+    <a href="#contact" class="drawer__link">Contact</a>
   </div>
-</header>
 
-<main id="top">
-  <section class="hero hero--split" data-enter aria-labelledby="hero-h">
-    <div class="wrap"><div class="hero-text grid hero__grid">
-      <div class="hero__text span-5">
-        <h1 id="hero-h">Full-stack developer in Dushanbe</h1>
-        <p class="hero__lead">I design, build and launch web apps, online stores, mobile apps and Telegram bots on my own, from the first screen to the live server. Ten projects shipped so far.</p>
-        <div class="btn-row">
-          <a class="btn btn--primary" href="mailto:pythonhack000@gmail.com?subject=Project">Email Bekha<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
-          <a class="btn btn--secondary" href="#work">See the work</a>
+  <!-- ====== HERO ====== -->
+  <section class="hero" id="home">
+    <div class="hero__top">
+      <span class="label" id="typewriterLabel"></span>
+      <span class="hero__status"><span class="status-dot"></span>Available for projects</span>
+    </div>
+
+    <div class="hero__name-wrap">
+      <h1 class="hero__name" id="heroName" aria-label="BEKHA">
+        <span class="char" data-char="B">B</span><span class="char" data-char="E">E</span><span class="char" data-char="K">K</span><span class="char" data-char="H">H</span><span class="char" data-char="A">A</span>
+      </h1>
+      <div class="hero__pixel-block" aria-hidden="true"></div>
+      <!-- Geometric 3D element inspired by CSS-Tricks -->
+      <div class="hero__geometric" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero__bottom">
+      <p class="hero__desc" id="heroDesc">
+        I design and ship <strong>real products</strong> — AI platforms,<br>
+        mobile apps, e-commerce, bots. Solo. Fast.
+      </p>
+      <div class="hero__actions">
+        <a href="#work" class="btn btn--primary magnetic" data-strength="40">
+          <span>See my work</span>
+        </a>
+        <a href="#contact" class="btn btn--outline magnetic" data-strength="30">
+          <span>Let's talk</span>
+        </a>
+      </div>
+      <div class="hero__meta">
+        <div class="meta-item">
+          <span class="meta-num counter" data-target="10">0</span>
+          <span class="meta-label">Projects shipped</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-num counter" data-target="4">0</span>
+          <span class="meta-label">Languages</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-num meta-num--inf">∞</span>
+          <span class="meta-label">Ideas</span>
         </div>
       </div>
-      <div class="hero__media span-6 start-7">
-        <img src="img/hero-tradeboard.jpg" width="1396" height="1600" alt="TRADEBOARD: a daily Bitcoin candlestick chart with volume bars and a drawing toolbar" style="--ly-pos: 50% 30%" fetchpriority="high" data-source="client" data-subject="TRADEBOARD chart app">
-        <div class="ly-float">
-          <div class="ly-float__row"><span class="ly-live">Live</span><span>React, TypeScript</span></div>
-          <div class="ly-float__title">TRADEBOARD, an AI chart assistant</div>
-        </div>
-      </div>
-    </div></div>
-  </section>
+    </div>
 
-  <section class="section ground-inverse" id="work" data-moment="photo-chapters" aria-labelledby="work-h">
-    <div class="wrap mo-ph">
-      <div class="mo-ph__head">
-        <h2 id="work-h">Four products, live today</h2>
-        <p>Each one designed, coded and deployed by me, for real users in Tajikistan and beyond.</p>
+    <div class="hero__scroll-hint" id="scrollHint" aria-hidden="true">
+      <div class="scroll-mouse">
+        <div class="scroll-mouse__wheel"></div>
       </div>
-      <ol class="mo-ph__list">
-        <li class="mo-ph__ch">
-          <figure class="mo-ph__pic"><img src="img/work-tradevision.jpg" alt="TRADEBOARD on a wide screen: a Bitcoin chart, drawing tools and a timeframe bar" width="2000" height="1250" loading="lazy" data-source="client" data-subject="TRADEBOARD"></figure>
-          <h3>TRADEBOARD draws on the chart</h3>
-          <p>The AI marks trendlines, support and zones on a live chart while it explains them. OpenAI, Anthropic, Gemini and Cerebras behind one switch.</p>
-          <a class="link" href="https://pythonhack000.github.io/tradevision/">Open TRADEBOARD</a>
-        </li>
-        <li class="mo-ph__ch">
-          <figure class="mo-ph__pic"><img src="img/work-gym.jpg" alt="FLEX landing page with a phone showing a credit balance and nearby gyms in Dushanbe" width="2000" height="1250" loading="lazy" data-source="client" data-subject="FLEX gym pass"></figure>
-          <h3>FLEX sells one pass for many gyms</h3>
-          <p>A pay-per-visit membership for Dushanbe: the landing page, a clickable app and the market and pricing research behind it.</p>
-          <a class="link" href="https://pythonhack000.github.io/gym/">Open FLEX</a>
-        </li>
-        <li class="mo-ph__ch">
-          <figure class="mo-ph__pic"><img src="img/work-takhtabozor.jpg" alt="Takhtabozor stock screen: warehouse balance in somoni and timber items with stock and prices" width="2000" height="1250" loading="lazy" data-source="client" data-subject="Takhtabozor warehouse app"></figure>
-          <h3>Takhtabozor counts a timber yard</h3>
-          <p>Stock, sales and customer debts for a wood market, in somoni. React and Vite, built to run fast on a cheap phone.</p>
-          <a class="link" href="https://pythonhack000.github.io/takhtabozor/">Open Takhtabozor</a>
-        </li>
-        <li class="mo-ph__ch">
-          <figure class="mo-ph__pic"><img src="img/work-bozor-hero.jpg" alt="AccBozor home page: a marketplace for game accounts with search and a deal guarantee" width="2000" height="1055" loading="lazy" data-source="client" data-subject="AccBozor marketplace"></figure>
-          <h3>AccBozor holds the money in escrow</h3>
-          <p>A marketplace for game and Steam accounts. The buyer's payment waits on the platform until the account is handed over.</p>
-          <a class="link" href="https://pythonhack000.github.io/bozor/">Open AccBozor</a>
-        </li>
-      </ol>
+      <span class="mono scroll-hint-text">scroll down</span>
     </div>
   </section>
 
-  <section class="section" id="services" aria-labelledby="services-h">
-    <div class="wrap">
-      <div class="section-head">
-        <h2 id="services-h">What I build for you</h2>
-      </div>
-      <div class="grid grid--top">
-        <ul class="rows span-6">
-          <li><span class="rows__name">Web apps and marketplaces<small>Accounts, payments, admin panels and dashboards on React and Supabase.</small></span></li>
-          <li><span class="rows__name">Online stores<small>Catalog, cart and checkout, with an admin that syncs across devices.</small></span></li>
-          <li><span class="rows__name">Mobile apps<small>Expo and Flutter apps for Android and iPhone, like a canteen ordering app.</small></span></li>
-          <li><span class="rows__name">Telegram bots and AI tools<small>Python bots that run around the clock on a VPS, with OpenAI or Claude inside.</small></span></li>
-        </ul>
-      <div class="panel span-6 start-7"><div class="dg" data-diagram='{"layout": "hub", "ground": "none", "motion": {"pulse": "none"}, "alt": "One product built on React, TypeScript, Supabase, Expo, Python, Telegram, OpenAI and Anthropic.", "center": {"label": "Your product"}, "spokes": [{"label": "React", "icon": "react"}, {"label": "TypeScript", "icon": "typescript"}, {"label": "Supabase", "icon": "supabase"}, {"label": "Expo", "icon": "expo"}, {"label": "Python", "icon": "python"}, {"label": "Telegram", "icon": "telegram"}, {"label": "OpenAI", "icon": "openai"}, {"label": "Anthropic", "icon": "anthropic"}]}'></div></div>
-      </div>
-    </div>
-  </section>
-</main>
+  <!-- ====== MARQUEE ====== -->
+  <div class="marquee-wrap" aria-hidden="true">
+    <div class="marquee">
+      <div class="marquee__inner">
+        <span>Python</span><span class="sep">—</span>
+        <span>C++</span><span class="sep">—</span>
+        <span>TypeScript</span><span class="sep">—</span>
+        <span>React</span><span class="sep">—</span>
+        <span>Flutter</span><span class="sep">—</span>
+        <span>Flask</span><span class="sep">—</span>
+        <span>Firebase</span><span class="sep">—</span>
+        <span>OpenAI</span><span class="sep">—</span>
+        <span>Kali Linux</span><span class="sep">—</span>
+        <span>Burp Suite</span><span class="sep">—</span>
+        <span>Wireshark</span><span class="sep">—</span>
+        <span>CTF</span><span class="sep">—</span>
+        <span>WebSockets</span><span class="sep">—</span>
+        <span>PostgreSQL</span><span class="sep">—</span>
+        <span>Dart</span><span class="sep">—</span>
+        <span>Vite</span><span class="sep">—</span>
+        <span>PWA</span><span class="sep">—</span>
+        <span>Networking</span><span class="sep">—</span>
 
-<footer class="footer closing" id="contact" aria-labelledby="close-h">
-  <div class="wrap">
-    <div class="closing__cta close--type">
-      <div class="section-head">
-        <h2 id="close-h">Send me your project idea</h2>
-        <p>One paragraph is enough. I answer by email or on Telegram.</p>
-      </div>
-      <a class="btn btn--primary btn--xl btn--wide" href="mailto:pythonhack000@gmail.com?subject=Project">Email Bekha<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
-    </div>
-    <div class="closing__links">
-      <div class="grid">
-        <div class="span-4 stack-4">
-          <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>Bekha</a>
-          <p class="footer__lede">Full-stack developer in Dushanbe, building web, mobile and AI products.</p>
-        </div>
-        <div class="span-2 start-7 footer__col"><h3>Work</h3><ul>
-          <li><a href="https://pythonhack000.github.io/tradevision/">TRADEBOARD</a></li>
-          <li><a href="https://pythonhack000.github.io/gym/">FLEX</a></li>
-          <li><a href="https://pythonhack000.github.io/takhtabozor/">Takhtabozor</a></li>
-          <li><a href="https://pythonhack000.github.io/bozor/">AccBozor</a></li>
-        </ul></div>
-        <div class="span-2 footer__col"><h3>More</h3><ul>
-          <li><a href="https://pythonhack000.github.io/bysabr-shop/">bysabr store</a></li>
-          <li><a href="https://pythonhack000.github.io/dii-campus/">DII Campus</a></li>
-        </ul></div>
-        <div class="span-2 footer__col"><h3>Contact</h3><ul>
-          <li><a href="https://t.me/sabrsf0">Telegram</a></li>
-          <li><a href="https://github.com/pythonhack000">GitHub</a></li>
-          <li><a href="https://www.linkedin.com/in/behruz-nabizoda-669491238/">LinkedIn</a></li>
-        </ul></div>
-      </div>
-      <div class="footer__legal">
-        <span>&copy; 2026 Bekha. Product names and logos are trademarks of their owners.</span>
+        <!-- duplicate for seamless loop -->
+        <span>Python</span><span class="sep">—</span>
+        <span>C++</span><span class="sep">—</span>
+        <span>TypeScript</span><span class="sep">—</span>
+        <span>React</span><span class="sep">—</span>
+        <span>Flutter</span><span class="sep">—</span>
+        <span>Flask</span><span class="sep">—</span>
+        <span>Firebase</span><span class="sep">—</span>
+        <span>OpenAI</span><span class="sep">—</span>
+        <span>Kali Linux</span><span class="sep">—</span>
+        <span>Burp Suite</span><span class="sep">—</span>
+        <span>Wireshark</span><span class="sep">—</span>
+        <span>CTF</span><span class="sep">—</span>
+        <span>WebSockets</span><span class="sep">—</span>
+        <span>PostgreSQL</span><span class="sep">—</span>
+        <span>Dart</span><span class="sep">—</span>
+        <span>Vite</span><span class="sep">—</span>
+        <span>PWA</span><span class="sep">—</span>
+        <span>Networking</span><span class="sep">—</span>
       </div>
     </div>
   </div>
-</footer>
 
-<script type="module" src="assets/system.js"></script>
-<script type="module" src="assets/motion/motion.js"></script>
-<script type="module" src="assets/layout/layout.js"></script>
-<script type="module" src="assets/diagrams/mount.js"></script>
+  <!-- ====== ABOUT ====== -->
+  <section class="section about" id="about">
+    <span class="section__bg-text" aria-hidden="true">ABOUT</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">01</span>
+        <span class="label">About</span>
+      </div>
+
+      <div class="about__layout">
+        <div class="about__left reveal">
+          <h2 class="section__title">Who I<br>Am</h2>
+        </div>
+        <div class="about__right">
+          <p class="about__p blur-in">
+            I'm Bekha — a self-driven developer who builds things people actually use.
+            Whether it's an AI trading assistant, a Flutter app for ordering lunch,
+            or a luxury fashion store, I care about the full picture:
+            <em>design, performance, and product thinking.</em>
+          </p>
+          <p class="about__p blur-in">
+            Started with Python, went deep into React, TypeScript, and Flutter.
+            Now I ship <strong>full-stack products from scratch — solo.</strong>
+            On the other side: I'm into cybersecurity and ethical hacking —
+            understanding how systems break so I can build ones that don't.
+          </p>
+
+          <div class="about__tags reveal">
+            <span class="tag">Full-Stack</span>
+            <span class="tag">C++ / Systems</span>
+            <span class="tag">Ethical Hacking</span>
+            <span class="tag">CTF Player</span>
+            <span class="tag">AI Builder</span>
+            <span class="tag">Mobile Dev</span>
+          </div>
+
+          <div class="code-block reveal">
+            <div class="code-block__bar">
+              <span class="cb-dot r"></span>
+              <span class="cb-dot y"></span>
+              <span class="cb-dot g"></span>
+              <span class="cb-file mono">bekha.ts</span>
+            </div>
+            <pre class="code-block__body mono"><code><span class="c-kw">const</span> bekha = {
+  name:    <span class="c-str">"Bekha"</span>,
+  github:  <span class="c-str">"pythonhack000"</span>,
+  stack:   [<span class="c-str">"Python"</span>, <span class="c-str">"C"</span>, <span class="c-str">"C++"</span>],
+  into:    [<span class="c-str">"Ethical Hacking"</span>, <span class="c-str">"CTF"</span>, <span class="c-str">"AI"</span>, <span class="c-str">"Products"</span>],
+  tools:   [<span class="c-str">"Kali Linux"</span>, <span class="c-str">"Wireshark"</span>, <span class="c-str">"Burp Suite"</span>],
+  ships:   <span class="c-bool">true</span>,
+};</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== WORK ====== -->
+  <section class="section work" id="work">
+    <span class="section__bg-text" aria-hidden="true">WORK</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">02</span>
+        <span class="label">Work</span>
+      </div>
+      <h2 class="section__title reveal">Selected<br>Projects</h2>
+
+      <div class="projects-list">
+
+        <article class="project reveal" data-index="01">
+          <div class="project__head">
+            <div class="project__num mono">01</div>
+            <h3 class="project__title">AccBozor — Account Marketplace</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/bozor/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/bozor" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Marketplace for game and Steam accounts, built for Tajikistan. Escrow-protected P2P deals,
+              manual payment confirmation flow, seller/buyer dashboards. Next.js static export on a Supabase backend.
+            </p>
+            <div class="project__stack">
+              <span>Next.js</span><span>TypeScript</span><span>Supabase</span><span>Escrow</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="02">
+          <div class="project__head">
+            <div class="project__num mono">02</div>
+            <h3 class="project__title">TRADEBOARD — AI Chart Assistant</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/tradevision/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/tradevision" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              AI trading-education tool that draws directly on a live chart — trendlines, support/resistance,
+              zones — animated like chalk, synced to a streamed explanation. Multi-provider AI (OpenAI, Anthropic,
+              Gemini, Cerebras), full TradingView-style drawing toolset, black-and-white chalkboard design.
+              Educational only — no signals.
+            </p>
+            <div class="project__stack">
+              <span>React</span><span>TypeScript</span><span>Vite</span><span>Multi-Provider AI</span><span>Canvas</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="03">
+          <div class="project__head">
+            <div class="project__num mono">03</div>
+            <h3 class="project__title">bysabr — Luxury Fashion Store</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/bysabr-shop/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/bysabr-shop" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Pixel-perfect luxury fashion e-commerce. Playfair Display typography, product catalog,
+              admin panel, checkout flow, Supabase backend for cross-device sync. Premium minimal aesthetic.
+            </p>
+            <div class="project__stack">
+              <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Supabase</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="04">
+          <div class="project__head">
+            <div class="project__num mono">04</div>
+            <h3 class="project__title">Smart Canteen</h3>
+            <div class="project__links">
+              <a href="https://github.com/pythonhack000/canteen-mobile" target="_blank" class="project__link">Mobile</a>
+              <a href="https://github.com/pythonhack000/canteen-web" target="_blank" class="project__link">Web</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              University canteen ordering system — Expo mobile app plus a Capacitor-wrapped web client.
+              Menu browsing, bonuses, real-time order tracking, Supabase backend shared across both.
+            </p>
+            <div class="project__stack">
+              <span>Expo</span><span>React Native</span><span>React</span><span>Capacitor</span><span>Supabase</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="05">
+          <div class="project__head">
+            <div class="project__num mono">05</div>
+            <h3 class="project__title">Takhtabozor</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/takhtabozor/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/takhtabozor" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Local marketplace web app. React + TypeScript SPA on Vite, Tailwind-driven UI,
+              built for speed on a lean component architecture.
+            </p>
+            <div class="project__stack">
+              <span>React</span><span>TypeScript</span><span>Vite</span><span>Tailwind</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="06">
+          <div class="project__head">
+            <div class="project__num mono">06</div>
+            <h3 class="project__title">FLEX — Gym Access Platform</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/gym/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/gym" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Pay-per-visit gym subscription platform concept — one membership, access to multiple gyms.
+              Product landing page plus an interactive app prototype, backed by full market and pricing research.
+            </p>
+            <div class="project__stack">
+              <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Product Design</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="07">
+          <div class="project__head">
+            <div class="project__num mono">07</div>
+            <h3 class="project__title">DII Campus</h3>
+            <div class="project__links">
+              <a href="https://pythonhack000.github.io/dii-campus/" target="_blank" class="project__link">Live</a>
+              <a href="https://github.com/pythonhack000/dii-campus" target="_blank" class="project__link">GitHub</a>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Single-page campus site — clean layout, fast load, zero dependencies.
+              Pure HTML/CSS/JS.
+            </p>
+            <div class="project__stack">
+              <span>HTML</span><span>CSS</span><span>JavaScript</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="08">
+          <div class="project__head">
+            <div class="project__num mono">08</div>
+            <h3 class="project__title">TradeSignal AI Bot</h3>
+            <div class="project__links">
+              <span class="project__link project__link--dim">Telegram</span>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              AI-powered Telegram trading signals bot. Real-time market analysis via OpenAI,
+              audio/video processing with FFmpeg, runs 24/7 on VPS.
+              Smart signal generation for traders.
+            </p>
+            <div class="project__stack">
+              <span>Python</span><span>OpenAI</span><span>Telegram API</span><span>FFmpeg</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="09">
+          <div class="project__head">
+            <div class="project__num mono">09</div>
+            <h3 class="project__title">Cybersecurity Market Research</h3>
+            <div class="project__links">
+              <span class="project__link project__link--dim">Research</span>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Deep-dive sector analysis of the global cybersecurity market 2025–2030 —
+              market sizing, regional breakdowns, business architectures, technical paradigms.
+            </p>
+            <div class="project__stack">
+              <span>Market Analysis</span><span>Cybersecurity</span><span>Business Strategy</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project reveal" data-index="10">
+          <div class="project__head">
+            <div class="project__num mono">10</div>
+            <h3 class="project__title">Private Equity — Central Asia</h3>
+            <div class="project__links">
+              <span class="project__link project__link--dim">Research</span>
+            </div>
+          </div>
+          <div class="project__body">
+            <p class="project__desc">
+              Operational and investment framework for private equity across Central Asia —
+              geopolitical context, regulatory landscape, and portfolio value-creation strategy.
+            </p>
+            <div class="project__stack">
+              <span>Private Equity</span><span>Market Analysis</span><span>Central Asia</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SKILLS ====== -->
+  <section class="section skills" id="skills">
+    <span class="section__bg-text" aria-hidden="true">SKILLS</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">03</span>
+        <span class="label">Skills</span>
+      </div>
+      <h2 class="section__title reveal">My Arsenal</h2>
+
+      <div class="skills-grid">
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Languages</h3>
+          <ul class="skill-cat__list">
+            <li>Python</li>
+            <li>C</li>
+            <li>C++</li>
+            <li>JavaScript</li>
+            <li>Dart</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Frontend</h3>
+          <ul class="skill-cat__list">
+            <li>React</li>
+            <li>Flutter</li>
+            <li>Vite</li>
+            <li>HTML / CSS</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Backend</h3>
+          <ul class="skill-cat__list">
+            <li>Flask</li>
+            <li>REST APIs</li>
+            <li>PostgreSQL</li>
+            <li>SQLAlchemy</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">Cloud &amp; Tools</h3>
+          <ul class="skill-cat__list">
+            <li>Firebase</li>
+            <li>GitHub Actions</li>
+            <li>VPS / Linux</li>
+            <li>Git</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat reveal">
+          <h3 class="skill-cat__name mono">AI &amp; APIs</h3>
+          <ul class="skill-cat__list">
+            <li>OpenAI API</li>
+            <li>Gemini API</li>
+            <li>Telegram Bot API</li>
+            <li>WebSockets</li>
+          </ul>
+        </div>
+
+        <div class="skill-cat skill-cat--cyber reveal">
+          <h3 class="skill-cat__name mono">Cybersecurity</h3>
+          <ul class="skill-cat__list">
+            <li>Ethical Hacking</li>
+            <li>Kali Linux</li>
+            <li>Burp Suite</li>
+            <li>Wireshark</li>
+            <li>Nmap / Ncat</li>
+            <li>CTF / OSINT</li>
+            <li>DPI Bypass</li>
+            <li>Network Security</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== CONTACT ====== -->
+  <section class="section contact" id="contact">
+    <span class="section__bg-text" aria-hidden="true">CONTACT</span>
+    <div class="container">
+      <div class="section__eyebrow reveal">
+        <span class="mono label-num">04</span>
+        <span class="label">Contact</span>
+      </div>
+
+      <div class="contact__big reveal">
+        <h2 class="contact__cta">Let's build<br><span class="contact__cta-accent">something real.</span></h2>
+      </div>
+
+      <div class="contact__row reveal">
+        <div class="contact-item contact-item--copy magnetic" data-copy="pythonhack000@gmail.com" data-strength="20" style="cursor:none;">
+          <span class="contact-item__label mono">Email</span>
+          <span class="contact-item__val">pythonhack000@gmail.com</span>
+          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </div>
+        <a href="https://www.linkedin.com/in/behruz-nabizoda-669491238/" target="_blank" class="contact-item magnetic" data-strength="20">
+          <span class="contact-item__label mono">LinkedIn</span>
+          <span class="contact-item__val">LinkedIn</span>
+          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </a>
+        <a href="https://t.me/sabrsf0" target="_blank" class="contact-item magnetic" data-strength="20">
+          <span class="contact-item__label mono">Telegram</span>
+          <span class="contact-item__val">@sabrsf0</span>
+          <svg class="contact-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <span class="mono">BEKHA — 2026</span>
+        <span class="mono footer__clock" id="liveClock"></span>
+        <span class="mono footer__credit">Built without limits.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BACK TO TOP -->
+  <button id="backToTop" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  </button>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- CURSOR TRAIL -->
+  <div id="cursorTrail"></div>
+
+  <script src="script.js?v=3"></script>
 </body>
 </html>
