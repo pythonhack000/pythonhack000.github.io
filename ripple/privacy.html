@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ripple privacy policy</title>
+<link rel="icon" href="../favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --void: #0f0a03; --amber: #ffb000; --dim: #a5741a; --text: #f1e2c2; --line: #3a2a0c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--void); color: var(--text); font: 400 15px/1.7 "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 20px 80px; }
+  nav { margin-bottom: 40px; font-size: 13px; color: var(--dim); }
+  nav a { color: var(--dim); }
+  h1 { color: var(--amber); font-size: 26px; font-weight: 600; margin: 0 0 8px; }
+  h2 { color: var(--amber); font-size: 17px; font-weight: 600; margin: 36px 0 8px; }
+  p, li { max-width: 70ch; }
+  a { color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 500; }
+  @media (max-width: 600px) { table, thead, tbody, tr, td, th { display: block; } thead { display: none; } td { border: 0; padding: 2px 0; } tr { border-bottom: 1px solid var(--line); padding: 8px 0; } }
+</style>
+</head>
+<body>
+<main>
+<nav><a href="../">pythonhack000.github.io</a> / ripple</nav>
+<h1>Ripple privacy policy</h1>
+<p>Last updated: 18 November 2026</p>
+<p>Ripple is a Forge app for Jira and Confluence. It runs entirely on Atlassian&#x27;s Forge platform. It has no servers of its own and sends no data outside Atlassian.</p>
+<h2>What Ripple reads</h2>
+<p>With the permissions of the person using it, Ripple reads from Jira:</p>
+<ul><li>projects and work items: key, title, status, type, priority, due date, parent and links;</li><li>assignees: account ID, display name, avatar and whether the account is active;</li><li>resolved work from the last 365 days, used only as per-person counts per project.</li></ul>
+<h2>What Ripple stores, and where</h2>
+<p>Everything is stored in Forge storage, which is hosted by Atlassian, in your site&#x27;s own installation:</p>
+<table><thead><tr><th>What</th><th>Purpose</th><th>How long</th></tr></thead><tbody><tr><td>Each user&#x27;s organisation map</td><td>Opens the map quickly</td><td>24 hours, rebuilt hourly</td></tr><tr><td>Planned absences (account ID and dates)</td><td>The team calendar</td><td>Until 30 days after the absence ends</td></tr><tr><td>Daily risk scores per person</td><td>The week-on-week trend on the dashboard</td><td>40 days</td></tr><tr><td>Report settings and the last report summary</td><td>The weekly Confluence page</td><td>Until the user stops the report or uninstalls</td></tr><tr><td>A marker per work item that already got an alert</td><td>Prevents repeated comments</td><td>60 days</td></tr></tbody></table>
+<p>Each user&#x27;s map is stored under their own account and never shown to anyone else.</p>
+<h2>What Ripple writes</h2>
+<ul><li><strong>Jira:</strong> reassignments and comments, only after a user confirms them, and with that user&#x27;s permissions. One app comment on a risky assignment, which states only what the work item itself shows. Jira admins can switch these comments off.</li><li><strong>Confluence:</strong> a &quot;Team risk map&quot; page, only in the space a user chooses.</li></ul>
+<h2>Sharing</h2>
+<p>Ripple does not sell, share or transfer data to anyone. It uses no analytics, no trackers and no third-party services.</p>
+<h2>Removing data</h2>
+<p>Uninstalling Ripple deletes its Forge storage for your site. Individual absences can be removed in the app at any time.</p>
+<h2>Contact</h2>
+<p><a href="mailto:pythonhack000@gmail.com">pythonhack000@gmail.com</a></p>
+</main>
+</body>
+</html>
