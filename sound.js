@@ -281,6 +281,11 @@
       try { localStorage.setItem(PACK_KEY, name); } catch (e) { /* not saved */ }
       return true;
     },
+    /** play one event from another pack without changing the visitor's choice (the breach goes cinematic) */
+    as(name, event, ...args) {
+      if (!soundOn || !PACKS[name] || !audio()) return;
+      PACKS[name][event](ctx.currentTime + 0.005, ...args);
+    },
     key: play('key'),
     click() { sound.key('char'); },
     hover(index = 0) {
