@@ -98,7 +98,7 @@
     const log = document.createElement('pre');
     layer.appendChild(log);
     document.body.appendChild(layer);
-    sound.thunk();
+    sound.as('cinema', 'thunk');   // the braam: the breach is the loudest moment on the site
 
     const lines = [
       '> connecting to bekha.mainframe:1969 ...',
@@ -134,7 +134,7 @@
       close.type = 'button'; close.className = 'breach__close'; close.textContent = tr('breachClose');
       close.addEventListener('click', done);
       layer.append(big, note, close);
-      sound.arp();
+      sound.as('cinema', 'arp', [523, 659, 784, 1047], 0.07);
       close.focus();
     };
     function done() {
