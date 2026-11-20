@@ -1,85 +1,12 @@
-/* Easter eggs: snake in the terminal, a fake breach, and synthesised CRT sound. */
+/* Easter eggs: snake in the terminal and a fake breach. */
 (() => {
   'use strict';
 
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ================= sound: everything is synthesised, nothing is downloaded ================= */
-  const SOUND_KEY = 'sound';
-  let ctx = null;
-  let hum = null;
-  let soundOn = false;
-  try { soundOn = localStorage.getItem(SOUND_KEY) === 'on'; } catch (e) { /* default off */ }
+  /* sound lives in sound.js; extras only plays it */
+  const sound = window.bekhaSound;
 
-  function audio() {
-    if (!ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-    }
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
-  }
-
-  function noiseBurst(ms, freq, gain) {
-    const a = audio(); if (!a) return;
-    const len = Math.floor(a.sampleRate * ms / 1000);
-    const buf = a.createBuffer(1, len, a.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
-    const src = a.createBufferSource(); src.buffer = buf;
-    const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 1.2;
-    const g = a.createGain(); g.gain.value = gain;
-    src.connect(f).connect(g).connect(a.destination);
-    src.start();
-  }
-
-  const sound = {
-    get on() { return soundOn; },
-    set(on) {
-      soundOn = on;
-      try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch (e) { /* not saved */ }
-      if (on) { sound.thunk(); sound.hum(true); } else { sound.hum(false); }
-      document.dispatchEvent(new CustomEvent('bekha:sound', { detail: on }));
-    },
-    click() { if (soundOn) noiseBurst(28, 2400 + Math.random() * 900, 0.35); },
-    thunk() {
-      if (!soundOn) return;
-      const a = audio(); if (!a) return;
-      const o = a.createOscillator(); const g = a.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(120, a.currentTime); o.frequency.exponentialRampToValueAtTime(38, a.currentTime + 0.35);
-      g.gain.setValueAtTime(0.5, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.45);
-      o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + 0.5);
-      noiseBurst(120, 6000, 0.12); // the high whine of a tube warming up
-    },
-    hum(on) {
-      const a = audio(); if (!a) return;
-      if (on && !hum) {
-        const o = a.createOscillator(); const g = a.createGain();
-        o.type = 'sawtooth'; o.frequency.value = 50;
-        const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
-        g.gain.value = 0.012;
-        o.connect(f).connect(g).connect(a.destination); o.start();
-        hum = { o, g };
-      } else if (!on && hum) {
-        hum.o.stop(); hum = null;
-      }
-    },
-    blip(freq) {
-      if (!soundOn) return;
-      const a = audio(); if (!a) return;
-      const o = a.createOscillator(); const g = a.createGain();
-      o.type = 'square'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.06, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.09);
-      o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + 0.1);
-    },
-  };
-  /* browsers start audio only after a gesture: resume the hum on the first one */
-  if (soundOn) {
-    const wake = () => { sound.hum(true); window.removeEventListener('pointerdown', wake); window.removeEventListener('keydown', wake); };
-    window.addEventListener('pointerdown', wake);
-    window.addEventListener('keydown', wake);
-  }
 
   /* ================= snake, drawn in the terminal ================= */
   const COLS = 34, ROWS = 14, TICK_MS = 110;
@@ -131,7 +58,7 @@
       over = true;
       clearInterval(timer);
       if (score > best) { best = score; try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* not saved */ } }
-      sound.blip(140);
+      sound.arp([392, 330, 262, 196], 0.11);
       render(`game over. score ${score}. press r to play again, q to quit.`);
     }
     const KEYS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
@@ -188,7 +115,7 @@
     const tick = () => {
       if (i < lines.length) {
         log.textContent += lines[i] + '\n';
-        sound.click();
+        sound.key(lines[i] ? 'char' : 'enter');
         i += 1;
         setTimeout(tick, REDUCED ? 0 : 230);
         return;
@@ -207,7 +134,7 @@
       close.type = 'button'; close.className = 'breach__close'; close.textContent = tr('breachClose');
       close.addEventListener('click', done);
       layer.append(big, note, close);
-      sound.blip(660);
+      sound.arp();
       close.focus();
     };
     function done() {
