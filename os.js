@@ -31,6 +31,7 @@
     const w = wins.get(url);
     if (!w) return;
     w.el.classList.add('is-closing');
+    window.bekhaExtras?.sound.close();
     setTimeout(() => { w.el.remove(); w.btn.remove(); wins.delete(url); syncTaskbar(); }, 180);
   }
 
@@ -155,7 +156,7 @@
     el.addEventListener('pointerdown', () => focus(w), true);
     focus(w);
     syncTaskbar();
-    window.bekhaExtras?.sound.thunk();
+    window.bekhaExtras?.sound.open();
   }
 
   /* a live port opens in a window; cmd/ctrl/shift-click, a phone or a narrow window keep the plain link */

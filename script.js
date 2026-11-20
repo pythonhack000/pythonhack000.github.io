@@ -160,7 +160,7 @@
     if (crt && !REDUCED) { crt.classList.remove('is-tuning'); void crt.offsetWidth; crt.classList.add('is-tuning'); }
   }
   rows.forEach((r) => {
-    r.addEventListener('pointerenter', () => setActive(r));
+    r.addEventListener('pointerenter', () => { if (!r.classList.contains('is-on')) window.bekhaExtras?.sound.hover(rows.indexOf(r)); setActive(r); });
     r.addEventListener('focusin', () => setActive(r));
   });
   if (rows[0]) showPing(rows[0]);
@@ -177,7 +177,7 @@
     if (!live.length) { uptimeState = ['uptimeLocal']; uptimeText.textContent = t('uptimeLocal'); return; }
     live.forEach((r) => r.querySelector('.row__state')?.classList.add('is-checking'));
     uptimeText.textContent = t('uptimeRun', live.length);
-    const results = await Promise.all(live.map(async (r) => { const res = await check(rowUrl(r)); markRow(r, res); return res; }));
+    const results = await Promise.all(live.map(async (r) => { const res = await check(rowUrl(r)); markRow(r, res); window.bekhaExtras?.sound.ping(res.ok, rows.indexOf(r)); return res; }));
     const up = results.filter((r) => r.ok);
     const sorted = up.map((r) => r.ms).sort((a, b) => a - b);
     const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
@@ -277,7 +277,8 @@
       ['  whereami        where you are, and how far from me'],
       ['  snake           play. arrows or WASD'],
       ['  hack            do not'],
-      ['  sound on|off    CRT hum and key clicks'],
+      ['  sound on|off    interface sound'],
+      ['  sound pack <n>  retro, cyber or cinema'],
       ['  sudo hire-me    you know what this does'],
       ['  clear, exit'],
     ],
@@ -348,6 +349,7 @@
     const line = raw.trim();
     if (!line) return;
     print(`${cwd}$ ${line}`, 'echo');
+    setTimeout(() => window.bekhaExtras?.sound.data(110), 70);
     const [cmd, ...args] = line.toLowerCase().split(/\s+/);
     const say = (lines) => lines.forEach(([text, cls]) => print(text, cls));
 
@@ -386,9 +388,17 @@
     if (cmd === 'hack') { if (X) X.breach(); return; }
     if (cmd === 'sound') {
       if (!X) { print('no sound card.', 'err'); return; }
+      if (args[0] === 'pack') {
+        const name = args[1];
+        if (!name) { print(`sound packs: ${X.sound.packs.join(', ')}. current: ${X.sound.pack}.`); return; }
+        if (!X.sound.setPack(name)) { print(`no pack "${name}". try: ${X.sound.packs.join(', ')}.`, 'err'); return; }
+        if (!X.sound.on) X.sound.set(true); else X.sound.thunk();
+        print(`sound pack: ${name}.`, 'hl');
+        return;
+      }
       const want = args[0] === 'off' ? false : args[0] === 'on' ? true : !X.sound.on;
       X.sound.set(want);
-      print(`sound ${want ? 'on: CRT hum and key clicks' : 'off'}.`, 'hl');
+      print(`sound ${want ? `on, pack ${X.sound.pack}` : 'off'}.`, 'hl');
       return;
     }
     if (cmd === 'ls') { say(ls(args[0])); return; }
@@ -418,7 +428,10 @@
     if (!out) return;
     if (!animated) { print(READY(), 'hl'); return; }
     const lines = ['[  ok  ] phosphor warm', `[  ok  ] mounted /work: ${PROJECTS.length} projects`, '[  ok  ] loaded neofetch, security.log', READY()];
-    lines.forEach((line, i) => setTimeout(() => print(line, i === lines.length - 1 ? 'hl' : 'echo'), 900 + i * BOOT_STEP_MS));
+    lines.forEach((line, i) => setTimeout(() => {
+      print(line, i === lines.length - 1 ? 'hl' : 'echo');
+      window.bekhaExtras?.sound.data(i === lines.length - 1 ? 260 : 90);
+    }, 900 + i * BOOT_STEP_MS));
   }
 
   function reboot() {
@@ -475,9 +488,11 @@
       run(v);
     });
 
-    const WORDS = Object.keys(COMMANDS).concat(['ls', 'cd', 'cat', 'open', 'run', 'sudo hire-me', 'theme', 'snake', 'hack', 'sound on', 'sound off', 'lang en', 'lang ru']);
+    const WORDS = Object.keys(COMMANDS).concat(['ls', 'cd', 'cat', 'open', 'run', 'sudo hire-me', 'theme', 'snake', 'hack', 'sound on', 'sound off', 'sound pack cyber', 'sound pack cinema', 'sound pack retro', 'lang en', 'lang ru']);
     input.addEventListener('keydown', (e) => {
-      if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') window.bekhaExtras?.sound.click();
+      if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') {
+        window.bekhaExtras?.sound.key(e.key === 'Enter' ? 'enter' : e.key === ' ' ? 'space' : 'char');
+      }
       if (e.key === 'Tab' && input.value.trim()) {
         const v = input.value.toLowerCase().trim();
         const [cmd] = v.split(/\s+/);
