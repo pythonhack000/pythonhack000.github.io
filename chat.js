@@ -145,7 +145,16 @@
     if (!API) throw new Error('the chat is offline right now. type telegram in the terminal');
     const res = await fetch(`${API}/chat`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const json = await res.json().catch(() => ({ success: false, error: `http ${res.status}` }));
-    if (res.status === 401) { chat = null; persist(); setMode(); }
+    if (res.status === 401 && chat) {
+      // the server forgets a chat after 24 hours of silence: start a fresh one
+      chat = null;
+      persist();
+      setMode();
+      shown.clear();
+      typingEl.remove();
+      if (open) line('', 'this chat was cleared after 24 hours. start again: what should I call you?', 'is-sys');
+      throw new Error('expired');
+    }
     if (!json.success) throw new Error(json.error || `http ${res.status}`);
     return full ? json : json.data;
   }
@@ -202,7 +211,7 @@
       if (list.length) chat.last = Math.max(chat.last || 0, list[list.length - 1].id);
       chat.seen = chat.last;
       persist();
-    } catch (err) { done(); line('', err.message, 'is-err'); }
+    } catch (err) { done(); if (err.message !== 'expired') line('', err.message, 'is-err'); }
   }
 
   async function submit(text) {
@@ -235,7 +244,7 @@
       poll();
     } catch (err) {
       done();
-      line('', err.message, 'is-err');
+      if (err.message !== 'expired') line('', err.message, 'is-err');
       sfx()?.blip(140);
     } finally {
       busy = false;
@@ -254,7 +263,7 @@
     paintMeta();
     setMode();
     if (!log.childElementCount) {
-      line('', 'this goes straight to my phone. no bots answer here, only me.', 'is-sys');
+      line('', 'this goes straight to my phone. no bots answer here, only me. the chat clears itself after 24 hours.', 'is-sys');
       if (!chat) line('', 'first, what should I call you?', 'is-sys');
     }
     history().then(poll);
