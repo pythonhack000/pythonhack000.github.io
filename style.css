@@ -514,3 +514,9 @@ html.intro-on .intro {
   .chat:not([hidden]) ~ .chat-launch, .chat-launch.is-open { display: none; }
 }
 .chat__line.is-pending { opacity: .5; }
+/* running dots while the chat waits for the server */
+.chat__line.is-loading::after, .chat__line.is-pending::after { content: ''; display: inline-block; width: 3ch; text-align: left; animation: chat-dots 1s steps(4) infinite; }
+.chat__line.is-pending::after { margin-left: 8px; content: ''; }
+@keyframes chat-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75%, 100% { content: '...'; } }
+.chat__form.is-busy .chat__ps { animation: chat-blink .8s steps(2) infinite; }
+.chat__in:disabled { opacity: .6; }

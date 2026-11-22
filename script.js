@@ -202,20 +202,25 @@
     if (github.repos !== null) ghFill('ghRepos', t('ghRepos', github.repos));
     if (github.last) ghFill('ghPush', t('ghPush', ago(github.last.at), github.last.name));
   }
-  (async () => {
-    try {
-      const [user, repos] = await Promise.all([
-        fetch(`https://api.github.com/users/${GH_USER}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`user ${r.status}`)))),
-        fetch(`https://api.github.com/users/${GH_USER}/repos?sort=pushed&per_page=1`).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`repos ${r.status}`)))),
-      ]);
-      if (typeof user.public_repos === 'number') github.repos = user.public_repos;
-      const top = Array.isArray(repos) ? repos[0] : null;
-      if (top && top.pushed_at) github.last = { name: top.name, at: top.pushed_at };
-      paintGithub();
-    } catch (err) {
-      /* GitHub rate limit or offline: the rows stay hidden, nothing else depends on them */
-    }
-  })();
+  /* one cached copy for every visitor from our server (gh function); GitHub directly only if that is down.
+     gitlog.js reads the same promise for `git log`. */
+  const getJson = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${url} ${r.status}`))));
+  async function githubDirect() {
+    const [user, repos] = await Promise.all([
+      getJson(`https://api.github.com/users/${GH_USER}`),
+      getJson(`https://api.github.com/users/${GH_USER}/repos?sort=pushed&per_page=1`),
+    ]);
+    const top = Array.isArray(repos) ? repos[0] : null;
+    return { repos: typeof user.public_repos === 'number' ? user.public_repos : null, last: top?.pushed_at ? { name: top.name, at: top.pushed_at } : null, commits: null };
+  }
+  const API = window.BEKHA_CONFIG?.api || '';
+  window.bekhaGithub = (API ? getJson(`${API}/gh`).then((j) => (j.success ? j.data : Promise.reject(new Error(j.error)))) : Promise.reject(new Error('no api')))
+    .catch(() => githubDirect());
+  window.bekhaGithub.then((d) => {
+    github.repos = d.repos;
+    github.last = d.last;
+    paintGithub();
+  }).catch(() => { /* GitHub rate limit or offline: the rows stay hidden, nothing else depends on them */ });
 
   /* ---------------- the terminal: a small shell over the page ---------------- */
   const term = document.getElementById('term');

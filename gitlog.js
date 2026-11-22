@@ -1,5 +1,5 @@
-/* git log: the latest real commits across my public repos, from the GitHub API.
-   Cached for a while so a visitor does not burn the 60 requests/hour the API allows without a token. */
+/* git log: the latest real commits across my public repos. They come from the server's cached copy
+   (script.js, window.bekhaGithub); GitHub is asked directly only when that is unavailable. */
 (() => {
   'use strict';
 
@@ -35,6 +35,8 @@
     if (cached) return Promise.resolve(cached);
     if (pending) return pending;
     pending = (async () => {
+      const shared = await (window.bekhaGithub || Promise.reject(new Error('none'))).catch(() => null);
+      if (shared?.commits?.length) return shared.commits;   // the server's cached copy: no GitHub calls from here
       const repos = await getJson(`https://api.github.com/users/${GH_USER}/repos?sort=pushed&per_page=${REPOS + 4}`);
       const live = repos.filter((r) => !r.fork && !r.archived).slice(0, REPOS);
       const lists = await Promise.all(live.map((r) =>

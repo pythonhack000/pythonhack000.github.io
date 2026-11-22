@@ -132,24 +132,43 @@
   }
 
   /* history: the whole conversation from the start when the panel opens */
+  /* a status line with running dots while the server works; returns a function that removes it */
+  function loading(text) {
+    const p = line('', text, 'is-sys is-loading');
+    return () => p.remove();
+  }
+  /* the input is locked while a request runs, so a second Enter cannot be lost */
+  function lock(on, placeholder) {
+    input.disabled = on;
+    form.classList.toggle('is-busy', on);
+    if (on) input.placeholder = placeholder;
+    else { setMode(); if (open) input.focus(); }
+  }
+
   async function history() {
     if (!chat) return;
+    const done = shown.size ? () => {} : loading('loading history');
     try {
       const list = await api({ action: 'poll', token: chat.token, after: 0 });
+      done();
       list.forEach(paintMessage);
       if (list.length) chat.last = Math.max(chat.last || 0, list[list.length - 1].id);
       chat.seen = chat.last;
       persist();
-    } catch (err) { line('', err.message, 'is-err'); }
+    } catch (err) { done(); line('', err.message, 'is-err'); }
   }
 
   async function submit(text) {
     if (busy) return;
     busy = true;
+    let done = () => {};
     try {
       if (!chat) {
         const name = text.slice(0, NAME_MAX);
+        lock(true, 'connecting...');
+        done = loading(`connecting as ${name}`);
         const data = await api({ action: 'start', name });
+        done();
         chat = { token: data.token, name: data.name, session: data.session, last: 0, seen: 0 };
         persist();
         setMode();
@@ -158,17 +177,21 @@
         return;
       }
       const pending = line(`${chat.name}>`, text.slice(0, BODY_MAX), 'is-me is-pending');   // shown at once, confirmed below
-      let m;
-      try { m = await api({ action: 'send', token: chat.token, body: text.slice(0, BODY_MAX) }); } finally { pending.remove(); }
+      done = () => pending.remove();
+      lock(true, 'sending...');
+      const m = await api({ action: 'send', token: chat.token, body: text.slice(0, BODY_MAX) });
+      done();
       paintMessage(m);
       sfx()?.key('enter');
       if (!m.delivered) line('', 'saved, but Telegram did not take it yet. I will still see it.', 'is-err');
       poll();
     } catch (err) {
+      done();
       line('', err.message, 'is-err');
       sfx()?.blip(140);
     } finally {
       busy = false;
+      lock(false);
     }
   }
 
