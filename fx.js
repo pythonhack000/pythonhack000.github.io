@@ -59,7 +59,7 @@
   ].join('\n');
   /* eslint-disable no-console -- the console note is the feature */
   console.log(`%c${banner}`, 'color:#ffb000;font-family:monospace;font-size:12px;text-shadow:0 0 6px #ffb000');
-  console.log('%cyou opened the console, so you are one of us.\nsource: https://github.com/pythonhack000/pythonhack000.github.io\nhiring? telegram @sabrsf0', 'color:#f1e2c2;font-family:monospace;font-size:13px;line-height:1.6');
+  console.log('%cyou opened the console, so you are one of us.\nsource: https://github.com/pythonhack000/pythonhack000.github.io\nhiring? telegram @sabr_sf0', 'color:#f1e2c2;font-family:monospace;font-size:13px;line-height:1.6');
   /* eslint-enable no-console */
 
   /* ---------- 3. a rare signal: a few visits in a hundred come up in green phosphor ---------- */

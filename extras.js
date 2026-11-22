@@ -128,7 +128,7 @@
       const tr = window.bekhaI18n ? window.bekhaI18n.t : (k) => ({ breachNote: 'Relax, nothing happened. Now hire the guy who built this: ', breachClose: 'close  [esc]' }[k]);
       note.append(tr('breachNote'));
       const a = document.createElement('a');
-      a.href = 'https://t.me/sabrsf0'; a.textContent = 'telegram @sabrsf0'; a.target = '_blank'; a.rel = 'noopener';
+      a.href = 'https://t.me/sabr_sf0'; a.textContent = 'telegram @sabr_sf0'; a.target = '_blank'; a.rel = 'noopener';
       note.appendChild(a);
       const close = document.createElement('button');
       close.type = 'button'; close.className = 'breach__close'; close.textContent = tr('breachClose');

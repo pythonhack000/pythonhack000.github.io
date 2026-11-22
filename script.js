@@ -13,7 +13,7 @@
   const GLYPHS = '!<>-_\\/[]{}=+*^?#$%&@01';
 
   const LINKS = Object.freeze({
-    telegram: 'https://t.me/sabrsf0',
+    telegram: 'https://t.me/sabr_sf0',
     email: 'mailto:pythonhack000@gmail.com',
     github: 'https://github.com/pythonhack000',
     linkedin: 'https://www.linkedin.com/in/behruz-nabizoda-669491238/',
@@ -311,7 +311,7 @@
     tree: () => [['~'], ['|-- work/'], ...PROJECTS.map((p, i) => [`|   ${i === PROJECTS.length - 1 ? '`--' : '|--'} ${p.name}`]), ['|-- whoami/'], ['|-- contact/'], ['|-- security.log'], ['`-- nasa.txt'], [`3 directories, ${PROJECTS.length + 2} files`, 'echo']],
     projects: () => PROJECTS.map((p) => [`  ${p.name.padEnd(18)}${p.what}`]).concat([['try: cat tradeboard, or open lunar', 'echo']]),
     stack: () => [['TypeScript, React, Next.js, Vite, Tailwind'], ['Supabase, PostgreSQL, Flask'], ['Expo, React Native, Flutter'], ['Python, OpenAI, Anthropic, Gemini, Telegram Bot API']],
-    contact: () => [['telegram  @sabrsf0'], ['email     pythonhack000@gmail.com'], ['github    pythonhack000'], ['type a name to open it, e.g. telegram', 'echo']],
+    contact: () => [['telegram  @sabr_sf0'], ['email     pythonhack000@gmail.com'], ['github    pythonhack000'], ['type a name to open it, e.g. telegram', 'echo']],
     telegram: () => { go(LINKS.telegram); return [['opening telegram...']]; },
     email: () => { go(LINKS.email); return [['opening mail...']]; },
     github: () => { go(LINKS.github); return [['opening github...']]; },
@@ -515,7 +515,7 @@
     /* candidates for what is typed so far: Tab cycles through them, the grey suggestion shows the best one */
     function completions(v) {
       const [cmd] = v.split(/\s+/);
-      let pool = ['ssh bekha', 'git log', 'ctf join', 'ctf top', 'resume --pdf'].concat(WORDS, [...ext.commands.keys()]);
+      let pool = ['chat', 'ssh bekha', 'git log', 'ctf join', 'ctf top', 'resume --pdf'].concat(WORDS, [...ext.commands.keys()]);
       if (cmd === 'open' || cmd === 'run') pool = PROJECTS.map((p) => `${cmd} ${p.name}`);
       if (cmd === 'cat') pool = PROJECTS.map((p) => `cat ${p.name}`).concat(FILES.map((f) => `cat ${f}`), ['cat resume']);
       if (cmd === 'cd' || cmd === 'ls') pool = ['work', 'whoami', 'contact'].map((d) => `${cmd} ${d}`);

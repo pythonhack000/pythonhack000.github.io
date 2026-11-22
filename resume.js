@@ -7,7 +7,7 @@
     title: 'Full-stack developer',
     location: 'Dushanbe, Tajikistan',
     contacts: [
-      ['telegram', '@sabrsf0', 'https://t.me/sabrsf0'],
+      ['telegram', '@sabr_sf0', 'https://t.me/sabr_sf0'],
       ['email', 'pythonhack000@gmail.com', 'mailto:pythonhack000@gmail.com'],
       ['github', 'github.com/pythonhack000', 'https://github.com/pythonhack000'],
       ['linkedin', 'Behruz Nabizoda', 'https://www.linkedin.com/in/behruz-nabizoda-669491238/'],
