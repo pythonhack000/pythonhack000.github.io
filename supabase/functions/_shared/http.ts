@@ -53,16 +53,12 @@ export async function clientKey(req: Request, scope: string): Promise<string> {
   return `${scope}:${await sha256(`${scope}|${ip}`)}`;
 }
 
-/** true when this bucket has room; records the hit. Old hits are pruned on the way. */
+/** true when this bucket has room; records the hit. Check and insert run in one locked transaction
+    (public.rate_hit), so parallel requests cannot all see the same free slot. */
 export async function allow(client: SupabaseClient, bucket: string, max: number, windowSeconds: number): Promise<boolean> {
-  const since = new Date(Date.now() - windowSeconds * 1000).toISOString();
-  await client.from('rate_hits').delete().eq('bucket', bucket).lt('at', since);
-  const { count, error } = await client.from('rate_hits').select('*', { count: 'exact', head: true }).eq('bucket', bucket).gte('at', since);
+  const { data, error } = await client.rpc('rate_hit', { p_bucket: bucket, p_max: max, p_window_seconds: windowSeconds });
   if (error) throw new Error(`rate limit: ${error.message}`);
-  if ((count ?? 0) >= max) return false;
-  const { error: insertError } = await client.from('rate_hits').insert({ bucket });
-  if (insertError) throw new Error(`rate limit: ${insertError.message}`);
-  return true;
+  return data === true;
 }
 
 export async function readJson(req: Request, maxBytes: number): Promise<Record<string, unknown> | null> {
