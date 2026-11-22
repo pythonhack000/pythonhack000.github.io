@@ -29,6 +29,9 @@ export function reply<T>(req: Request, status: number, body: Envelope<T>): Respo
   });
 }
 
+/** CORS preflight: 204 must not carry a body */
+export const preflight = (req: Request) => new Response(null, { status: 204, headers: cors(req) });
+
 export const fail = (req: Request, status: number, error: string) => reply(req, status, { success: false, error });
 
 export function db(): SupabaseClient {

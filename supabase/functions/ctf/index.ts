@@ -1,6 +1,6 @@
 // CTF scoreboard. Flags are checked here against the same SHA-256 list the site uses,
 // so a forged request cannot score without knowing the flags.
-import { allow, clientKey, db, fail, readJson, reply, sha256 } from '../_shared/http.ts';
+import { allow, clientKey, db, fail, preflight, readJson, reply, sha256 } from '../_shared/http.ts';
 
 const FLAG_HASHES: ReadonlyArray<string> = [
   '1cc9f1f1b1ba16103242aee7a93e3c1d923e180dffd3f5cb6253a26cf2208549',
@@ -31,7 +31,7 @@ async function verify(flags: unknown): Promise<number[]> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return reply(req, 204, { success: true });
+  if (req.method === 'OPTIONS') return preflight(req);
   if (req.method !== 'POST') return fail(req, 405, 'POST only');
 
   try {

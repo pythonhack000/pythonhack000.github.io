@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Pixelify+Sans:wght@400;500&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="style.css?v=21">
 <script>
   try {
     if (sessionStorage.getItem('seen')) document.documentElement.classList.add('seen');
@@ -82,7 +82,10 @@
         <div class="term__out" id="termOut" role="log" aria-live="polite" aria-label="Terminal output"></div>
         <form class="term__line" id="termForm" autocomplete="off">
           <label class="term__ps" id="termPs" for="termIn">bekha@dushanbe:~$</label>
-          <input id="termIn" class="term__in" type="text" spellcheck="false" autocapitalize="off" aria-describedby="termHint">
+          <span class="term__field">
+            <input id="termIn" class="term__in" type="text" spellcheck="false" autocapitalize="off" aria-describedby="termHint">
+            <span class="term__suggest" id="termSuggest" aria-hidden="true"><span class="term__typed"></span><span class="term__rest"></span></span>
+          </span>
           <span class="term__hint" id="termHint"><span data-i18n="hintA">type</span> <kbd>help</kbd> <span data-i18n="hintB">and press enter</span></span>
         </form>
       </div>
@@ -257,13 +260,13 @@
 <script src="intro.js?v=4" defer></script>
 <script src="sound.js?v=5" defer></script>
 <script src="extras.js?v=13" defer></script>
-<script src="config.js?v=1" defer></script>
-<script src="script.js?v=23" defer></script>
+<script src="config.js?v=2" defer></script>
+<script src="script.js?v=24" defer></script>
 <script src="ctf.js?v=1" defer></script>
 <script src="ssh.js?v=1" defer></script>
 <script src="gitlog.js?v=1" defer></script>
 <script src="resume.js?v=1" defer></script>
-<script src="fx.js?v=5" defer></script>
+<script src="fx.js?v=6" defer></script>
 <script src="os.js?v=2" defer></script>
 </body>
 </html>

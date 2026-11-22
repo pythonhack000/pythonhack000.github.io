@@ -131,10 +131,15 @@ main > section { max-width: var(--max); margin: 0 auto; padding: 0 var(--gut); }
 .term__out .err { color: var(--red); }
 .term__line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .term__ps { color: var(--amber); text-shadow: var(--glow); white-space: nowrap; }
+.term__field { position: relative; flex: 1 1 160px; min-width: 0; display: flex; }
 .term__in {
-  flex: 1 1 160px; min-width: 0; background: none; border: 0; outline: 0;
+  flex: 1 1 auto; width: 100%; min-width: 0; background: none; border: 0; outline: 0;
   color: var(--text); font: inherit; font-size: 16px; caret-color: var(--amber); padding: 6px 0;
 }
+/* fish-style suggestion: the typed part is invisible and only pushes the grey rest into place */
+.term__suggest { position: absolute; inset: 0; padding: 6px 0; font: inherit; font-size: 16px; white-space: pre; overflow: hidden; pointer-events: none; }
+.term__typed { visibility: hidden; }
+.term__rest { color: var(--amber-dim); opacity: .7; }
 .term__hint { color: var(--amber-dim); font-size: 13px; }
 .term__hint kbd { font: inherit; color: var(--amber); border: 1px solid var(--line); padding: 0 6px; }
 .term:focus-within { border-color: color-mix(in srgb, var(--amber) 40%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--amber) 13%, transparent), 0 0 30px color-mix(in srgb, var(--amber) 6%, transparent); }

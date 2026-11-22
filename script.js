@@ -512,26 +512,57 @@
     });
 
     const WORDS = Object.keys(COMMANDS).concat(['ls', 'cd', 'cat', 'open', 'run', 'sudo hire-me', 'theme', 'snake', 'hack', 'sound on', 'sound off', 'sound pack cyber', 'sound pack cinema', 'sound pack retro', 'lang en', 'lang ru']);
+    /* candidates for what is typed so far: Tab cycles through them, the grey suggestion shows the best one */
+    function completions(v) {
+      const [cmd] = v.split(/\s+/);
+      let pool = ['ssh bekha', 'git log', 'ctf join', 'ctf top', 'resume --pdf'].concat(WORDS, [...ext.commands.keys()]);
+      if (cmd === 'open' || cmd === 'run') pool = PROJECTS.map((p) => `${cmd} ${p.name}`);
+      if (cmd === 'cat') pool = PROJECTS.map((p) => `cat ${p.name}`).concat(FILES.map((f) => `cat ${f}`), ['cat resume']);
+      if (cmd === 'cd' || cmd === 'ls') pool = ['work', 'whoami', 'contact'].map((d) => `${cmd} ${d}`);
+      if (cmd === 'theme') pool = THEMES.map((th) => `theme ${th}`);
+      return [...new Set(pool)].filter((w) => w.startsWith(v));
+    }
+    const suggestEl = document.getElementById('termSuggest');
+    let suggestion = '';
+    function showSuggestion() {
+      const v = input.value;
+      suggestion = '';
+      if (v.trim() && !ext.capture && input.selectionStart === v.length) {
+        const low = v.toLowerCase();
+        const past = [...history].reverse().find((h) => h.toLowerCase().startsWith(low) && h.length > v.length);
+        const hit = past || completions(low).find((w) => w.length > v.length);
+        if (hit) suggestion = v + hit.slice(v.length);
+      }
+      if (!suggestEl) return;
+      const fits = input.scrollWidth <= input.clientWidth;
+      suggestEl.firstChild.textContent = suggestion && fits ? v : '';
+      suggestEl.lastChild.textContent = suggestion && fits ? suggestion.slice(v.length) : '';
+    }
+    input.addEventListener('input', showSuggestion);
+    input.addEventListener('blur', () => { suggestion = ''; if (suggestEl) { suggestEl.firstChild.textContent = ''; suggestEl.lastChild.textContent = ''; } });
+    form.addEventListener('submit', () => setTimeout(showSuggestion, 0));
+
     input.addEventListener('keydown', (e) => {
       if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') {
         window.bekhaExtras?.sound.key(e.key === 'Enter' ? 'enter' : e.key === ' ' ? 'space' : 'char');
       }
-      if (e.key === 'Tab' && input.value.trim()) {
-        const v = input.value.toLowerCase().trim();
-        const [cmd] = v.split(/\s+/);
-        let pool = WORDS.concat([...ext.commands.keys()], ['ssh bekha', 'git log', 'ctf join', 'ctf top', 'resume --pdf']);
-        if (cmd === 'open' || cmd === 'run') pool = PROJECTS.map((p) => `${cmd} ${p.name}`);
-        if (cmd === 'cat') pool = PROJECTS.map((p) => `cat ${p.name}`).concat(FILES.map((f) => `cat ${f}`));
-        if (cmd === 'cd' || cmd === 'ls') pool = ['work', 'whoami', 'contact'].map((d) => `${cmd} ${d}`);
-        if (cmd === 'theme') pool = THEMES.map((t) => `theme ${t}`);
-        const hits = pool.filter((w) => w.startsWith(v));
-        if (hits.length === 1) input.value = hits[0] + ' ';
-        else if (hits.length > 1) print(hits.join('   '), 'echo');
+      const atEnd = input.selectionStart === input.value.length;
+      if (suggestion && atEnd && (e.key === 'ArrowRight' || e.key === 'End' || e.key === 'Tab')) {
+        input.value = suggestion;
+        showSuggestion();
         e.preventDefault();
         return;
       }
-      if (e.key === 'ArrowUp' && histIdx > 0) { histIdx -= 1; input.value = history[histIdx]; e.preventDefault(); }
-      if (e.key === 'ArrowDown') { histIdx = Math.min(history.length, histIdx + 1); input.value = history[histIdx] ?? ''; e.preventDefault(); }
+      if (e.key === 'Tab' && input.value.trim()) {
+        const hits = completions(input.value.toLowerCase().trim());
+        if (hits.length === 1) input.value = hits[0] + ' ';
+        else if (hits.length > 1) print(hits.join('   '), 'echo');
+        showSuggestion();
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'ArrowUp' && histIdx > 0) { histIdx -= 1; input.value = history[histIdx]; e.preventDefault(); showSuggestion(); }
+      if (e.key === 'ArrowDown') { histIdx = Math.min(history.length, histIdx + 1); input.value = history[histIdx] ?? ''; e.preventDefault(); showSuggestion(); }
       if (e.key === 'l' && e.ctrlKey) { out.textContent = ''; e.preventDefault(); }
       if (e.key === 'c' && e.ctrlKey && ext.capture) { e.preventDefault(); input.value = ''; ext.capture('\u0003'); }
     });

@@ -1,12 +1,10 @@
-/* Five small things on top of the page: TV static between projects, a console note for developers,
-   a rare green signal, a ghost at the keyboard when nobody types, and hero depth under the pointer. */
+/* Small things on top of the page: TV static between projects, a console note for developers,
+   a rare green signal, and hero depth under the pointer. */
 (() => {
   'use strict';
 
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const RARE_CHANCE = 0.03;
-  const GHOST_IDLE_MS = 6000;
-  const GHOST_TYPE_MS = 85;
   const STATIC_MS = 260;
   const PARALLAX_PX = 14;
   const t = (k, ...a) => (window.bekhaI18n ? window.bekhaI18n.t(k, ...a) : k);
@@ -76,47 +74,6 @@
   if (rare) {
     const say = () => window.bekhaShell?.print(t('rareSignal'), 'hl');
     if (window.bekhaShell) setTimeout(say, 1600); else document.addEventListener('DOMContentLoaded', () => setTimeout(say, 1600));
-  }
-
-  /* ---------- 4. the ghost at the keyboard: if nobody types, the shell shows what it can do ---------- */
-  const form = document.getElementById('termForm');
-  const input = document.getElementById('termIn');
-  if (form && input && !REDUCED) {
-    const SCRIPT = ['help', 'ls work', 'cat lunar'];
-    let step = 0, idle = 0, typing = 0, stopped = false;
-    const stop = () => {
-      stopped = true;
-      clearTimeout(idle); clearTimeout(typing);
-      ['keydown', 'pointerdown', 'wheel', 'touchstart'].forEach((ev) => window.removeEventListener(ev, onUser, true));
-    };
-    const onUser = (e) => {
-      if (e.isTrusted) stop();
-    };
-    const typeLine = (line, i = 0) => {
-      if (stopped) return;
-      input.value = line.slice(0, i);
-      if (i < line.length) { typing = setTimeout(() => typeLine(line, i + 1), GHOST_TYPE_MS + Math.random() * 60); return; }
-      typing = setTimeout(() => {
-        if (stopped) return;
-        form.requestSubmit();
-        step += 1;
-        if (step < SCRIPT.length) idle = setTimeout(() => typeLine(SCRIPT[step]), 1800);
-      }, 380);
-    };
-    let listening = false;
-    const arm = () => {
-      if (stopped || document.documentElement.classList.contains('intro-on')) return;
-      if (!listening) {   /* only what the visitor does after the intro counts: the key that skipped it does not */
-        listening = true;
-        ['keydown', 'pointerdown', 'wheel', 'touchstart'].forEach((ev) => window.addEventListener(ev, onUser, true));
-      }
-      idle = setTimeout(() => {
-        const r = form.getBoundingClientRect();
-        if (r.top < innerHeight && r.bottom > 0) typeLine(SCRIPT[step]); else arm();
-      }, GHOST_IDLE_MS);
-    };
-    if (document.documentElement.classList.contains('intro-on')) document.addEventListener('bekha:intro-done', () => setTimeout(arm, 50), { once: true });
-    else arm();
   }
 
   /* ---------- 5. depth in the hero: the name and the globe drift apart under the pointer ---------- */

@@ -1,6 +1,6 @@
 // ssh bekha: forwards a visitor's message to my Telegram. The bot token stays in function secrets.
 // Plain text only (no parse_mode), so a message cannot inject formatting or links into the chat.
-import { allow, clientKey, db, fail, readJson, reply } from '../_shared/http.ts';
+import { allow, clientKey, db, fail, preflight, readJson, reply } from '../_shared/http.ts';
 
 const CONTACT_MAX = 80;
 const MESSAGE_MIN = 5;
@@ -12,7 +12,7 @@ const PER_IP_PER_HOUR = 3;
 const ALL_PER_DAY = 40;
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return reply(req, 204, { success: true });
+  if (req.method === 'OPTIONS') return preflight(req);
   if (req.method !== 'POST') return fail(req, 405, 'POST only');
 
   const token = Deno.env.get('TELEGRAM_BOT_TOKEN');
