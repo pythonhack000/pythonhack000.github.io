@@ -1,7 +1,7 @@
 // Live chat for the site. A visitor starts a session under a name and gets a secret token;
 // each message is forwarded to Bekha's Telegram, his replies come back through tg-webhook.
 import { allow, clientKey, db, fail, preflight, readJson, reply, sha256 } from '../_shared/http.ts';
-import { ensureThread, markAwaiting, sendToOwner, shortId, telegramConfig, type ChatSession } from '../_shared/telegram.ts';
+import { ensureThread, markAwaiting, sendToOwner, telegramConfig, visitorButtons, type ChatSession } from '../_shared/telegram.ts';
 
 const NAME_MAX = 32;
 const BODY_MAX = 1000;
@@ -15,6 +15,14 @@ const DAY = 24 * HOUR;
 /** trim, drop control characters, collapse whitespace */
 const clean = (v: unknown, max: number): string =>
   typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/[ \t]+/g, ' ').trim().slice(0, max) : '';
+
+/** when Bekha is answering someone else, say so under a new visitor's message, so he does not reply to the wrong person */
+async function activeHint(client: ReturnType<typeof db>, sessionId: string): Promise<string> {
+  const { data } = await client.from('bot_state').select('active_session').eq('id', 1).maybeSingle();
+  if (!data?.active_session || data.active_session === sessionId) return '';
+  const { data: other } = await client.from('chat_sessions').select('name').eq('id', data.active_session).maybeSingle();
+  return other ? `\n\n(сейчас ты пишешь ${other.name}; чтобы ответить этому человеку, нажми «Ответить»)` : '';
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return preflight(req);
@@ -32,7 +40,7 @@ Deno.serve(async (req) => {
       const token = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
       const { data, error } = await client.from('chat_sessions').insert({ name, token_hash: await sha256(token) }).select('id, name').single();
       if (error) throw new Error(error.message);
-      return reply(req, 200, { success: true, data: { token, name: data.name, session: shortId(data.id) } });
+      return reply(req, 200, { success: true, data: { token, name: data.name, session: data.id.slice(0, 4) } });
     }
 
     const token = typeof body.token === 'string' ? body.token : '';
@@ -67,7 +75,7 @@ Deno.serve(async (req) => {
         // in a topic the name is already in the title; in the main chat the header says who it is
         tgId = thread
           ? await sendToOwner(cfg, text, thread)
-          : await sendToOwner(cfg, `${session.name} · chat #${shortId(session.id)}\n\n${text}\n\nreply to this message to answer`);
+          : await sendToOwner(cfg, `${session.name}:\n${text}${await activeHint(client, session.id)}`, null, visitorButtons(session));
         if (thread) await markAwaiting(cfg, client, { ...session, tg_thread_id: thread, awaiting: session.tg_thread_id ? session.awaiting : true }, true);
         else await client.from('chat_sessions').update({ awaiting: true }).eq('id', session.id);
       }

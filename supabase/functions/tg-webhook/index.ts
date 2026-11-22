@@ -1,60 +1,132 @@
-// Telegram webhook for @portfolio_bekhabot.
-//   - writing inside a visitor's topic answers that visitor (no reply needed)
-//   - replying to a visitor's message in the main chat answers them too (when topics are off)
-//   - /chats lists conversations, newest first; /to <id> <text> answers by chat id
-// Only requests carrying the webhook secret, and only messages from Bekha's own chat, are accepted.
+// Telegram webhook for @portfolio_bekhabot, driven by buttons:
+//   - under each visitor message: [Ответить: name] [История]
+//   - after "Ответить", every plain message goes to that visitor until another one is picked
+//   - the "Чаты" key under the input lists conversations as buttons, newest first, ● = waiting
+//   - inside a visitor's topic (when topics are on) everything written goes to that visitor
+// Only requests carrying the webhook secret, and only Bekha's own chat, are accepted.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { db } from '../_shared/http.ts';
-import { markAwaiting, sendToOwner, shortId, telegramConfig, type ChatSession, type TelegramConfig } from '../_shared/telegram.ts';
+import { markAwaiting, MENU, sendToOwner, telegramConfig, tg, visitorButtons, type ChatSession, type Markup, type TelegramConfig } from '../_shared/telegram.ts';
 
 const BODY_MAX = 1000;
-const LIST_MAX = 15;
-const PREVIEW_MAX = 60;
+const LIST_MAX = 12;
+const HISTORY_MAX = 12;
+const LINE_MAX = 300;
 const SESSION_COLS = 'id, name, tg_thread_id, awaiting';
+const UUID_RE = /^[0-9a-f-]{36}$/;
 const ok = () => new Response('ok');
 
-const HELP = [
-  'Site chat is on. Visitors write on pythonhack000.github.io.',
-  '',
-  'With topics on: every visitor gets a topic named after them. Write inside it and it goes to that person. ● in the title = waiting for your answer.',
-  'Without topics: reply to a visitor\'s message, or use /to <id> <text>.',
-  '',
-  '/chats  conversations, newest first',
-  '/to a1b2 text  answer chat #a1b2',
-].join('\n');
-
-function ago(iso: string): string {
+function ago(iso: string | null): string {
+  if (!iso) return '';
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return 'сейчас';
+  if (s < 3600) return `${Math.floor(s / 60)} мин`;
+  if (s < 86400) return `${Math.floor(s / 3600)} ч`;
+  return `${Math.floor(s / 86400)} д`;
 }
 
-async function listChats(cfg: TelegramConfig, client: SupabaseClient, threadId?: number) {
+const getSession = async (client: SupabaseClient, id: string) =>
+  UUID_RE.test(id) ? (await client.from('chat_sessions').select(SESSION_COLS).eq('id', id).maybeSingle<ChatSession>()).data : null;
+
+async function activeSession(client: SupabaseClient): Promise<ChatSession | null> {
+  const { data } = await client.from('bot_state').select('active_session').eq('id', 1).maybeSingle();
+  return data?.active_session ? getSession(client, data.active_session) : null;
+}
+const setActive = (client: SupabaseClient, id: string | null) =>
+  client.from('bot_state').update({ active_session: id, updated_at: new Date().toISOString() }).eq('id', 1);
+
+/* ---------- screens: text + buttons, shown by editing one message ---------- */
+async function listScreen(client: SupabaseClient): Promise<[string, Markup]> {
   const { data: sessions } = await client.from('chat_sessions').select('id, name, awaiting, last_message_at')
     .not('last_message_at', 'is', null).order('last_message_at', { ascending: false }).limit(LIST_MAX);
-  if (!sessions?.length) { await sendToOwner(cfg, 'No conversations yet.', threadId); return; }
-  const { data: msgs } = await client.from('chat_messages').select('session_id, body, from_owner')
-    .in('session_id', sessions.map((s) => s.id)).order('id', { ascending: false }).limit(LIST_MAX * 20);
-  const lines = sessions.map((s) => {
-    const own = (msgs ?? []).filter((m) => m.session_id === s.id);
-    const last = own[0];
-    const preview = last ? `${last.from_owner ? 'you: ' : ''}${last.body.replace(/\s+/g, ' ').slice(0, PREVIEW_MAX)}` : '';
-    return `${s.awaiting ? '● ' : '  '}${s.name} #${shortId(s.id)}  ${own.length} msg, ${ago(s.last_message_at)}\n     ${preview}`;
-  });
+  if (!sessions?.length) return ['Пока никто не писал.', { inline_keyboard: [] }];
   const waiting = sessions.filter((s) => s.awaiting).length;
-  await sendToOwner(cfg, `${sessions.length} chats, ${waiting} waiting for you (●)\n\n${lines.join('\n\n')}`, threadId);
+  const rows = sessions.map((s) => [{ text: `${s.awaiting ? '● ' : ''}${s.name} · ${ago(s.last_message_at)}`.slice(0, 60), callback_data: `h:${s.id}` }]);
+  return [`Чаты: ${sessions.length}, ждут ответа: ${waiting} (●)\nНажми на человека, чтобы открыть переписку.`, { inline_keyboard: rows }];
+}
+
+async function historyScreen(client: SupabaseClient, s: ChatSession): Promise<[string, Markup]> {
+  const { data: msgs } = await client.from('chat_messages').select('from_owner, body, created_at')
+    .eq('session_id', s.id).order('id', { ascending: false }).limit(HISTORY_MAX);
+  const lines = (msgs ?? []).reverse().map((m) => `${m.from_owner ? 'ты' : s.name}: ${m.body.slice(0, LINE_MAX)}`);
+  const text = `${s.awaiting ? '● ждёт ответа\n' : ''}Переписка с ${s.name}\n\n${lines.join('\n\n') || 'пусто'}`;
+  return [text.slice(0, 4000), { inline_keyboard: [
+    [{ text: `Ответить: ${s.name}`.slice(0, 40), callback_data: `r:${s.id}` }],
+    [{ text: '« Все чаты', callback_data: 'l' }],
+  ] }];
+}
+
+async function show(cfg: TelegramConfig, [text, markup]: [string, Markup], editId?: number) {
+  if (editId) {
+    const edited = await tg(cfg, 'editMessageText', { chat_id: cfg.ownerChatId, message_id: editId, text, reply_markup: markup });
+    if (edited) return;
+  }
+  await sendToOwner(cfg, text, null, markup);
 }
 
 /** stores Bekha's answer in a visitor's chat; the site shows it on the next poll */
-async function answer(cfg: TelegramConfig, client: SupabaseClient, session: ChatSession, text: string, tgMessageId: number) {
+async function answer(cfg: TelegramConfig, client: SupabaseClient, s: ChatSession, text: string, tgMessageId: number) {
   const { data: msg, error } = await client.from('chat_messages')
-    .insert({ session_id: session.id, from_owner: true, body: text.slice(0, BODY_MAX), tg_message_id: tgMessageId })
+    .insert({ session_id: s.id, from_owner: true, body: text.slice(0, BODY_MAX), tg_message_id: tgMessageId })
     .select('created_at').single();
-  if (error) { console.error('tg-webhook insert', error.message); return; }
-  await client.from('chat_sessions').update({ last_message_at: msg.created_at }).eq('id', session.id);
-  await markAwaiting(cfg, client, session, false);
+  if (error) { console.error('tg-webhook insert', error.message); return false; }
+  await client.from('chat_sessions').update({ last_message_at: msg.created_at }).eq('id', s.id);
+  await markAwaiting(cfg, client, s, false);
+  await tg(cfg, 'setMessageReaction', { chat_id: cfg.ownerChatId, message_id: tgMessageId, reaction: [{ type: 'emoji', emoji: '👌' }] });
+  return true;
+}
+
+/* ---------- button taps ---------- */
+async function onCallback(cfg: TelegramConfig, client: SupabaseClient, cq: Record<string, any>) {
+  const data: string = cq.data ?? '';
+  const msgId: number | undefined = cq.message?.message_id;
+  const toast = (text: string) => tg(cfg, 'answerCallbackQuery', { callback_query_id: cq.id, text });
+
+  if (data === 'l') { await show(cfg, await listScreen(client), msgId); await toast(''); return; }
+  if (data === 'x') { await setActive(client, null); await toast('Режим ответа выключен'); await sendToOwner(cfg, 'Ок, никому не отвечаешь. Выбери человека в «Чаты».', null, MENU); return; }
+
+  const [kind, id] = [data.slice(0, 1), data.slice(2)];
+  const s = await getSession(client, id);
+  if (!s) { await toast('Этого чата уже нет'); return; }
+  if (kind === 'h') { await show(cfg, await historyScreen(client, s), msgId); await toast(''); return; }
+  if (kind === 'r') {
+    await setActive(client, s.id);
+    await toast(`Пишешь: ${s.name}`);
+    await sendToOwner(cfg, `Пишешь ${s.name}. Всё, что напишешь дальше, уйдёт этому человеку.`, null,
+      { inline_keyboard: [[{ text: 'История', callback_data: `h:${s.id}` }, { text: 'Хватит отвечать', callback_data: 'x' }]] });
+  }
+}
+
+/* ---------- typed messages ---------- */
+async function onMessage(cfg: TelegramConfig, client: SupabaseClient, msg: Record<string, any>) {
+  const text: string = msg.text.trim();
+  const threadId: number | undefined = msg.message_thread_id;
+
+  if (text === 'Чаты' || text.startsWith('/chats')) { await show(cfg, await listScreen(client)); return; }
+  if (text.startsWith('/start') || text.startsWith('/help')) {
+    await sendToOwner(cfg, 'Чат с сайта подключён.\n\nКогда кто-то пишет на сайте, сообщение приходит сюда с кнопками «Ответить» и «История». Нажми «Ответить» и просто пиши текстом.\n\nКнопка «Чаты» внизу показывает всех, кто писал. ● значит ждёт ответа.', threadId, MENU);
+    return;
+  }
+
+  // inside a visitor's topic: everything written there is for them
+  if (threadId) {
+    const { data: s } = await client.from('chat_sessions').select(SESSION_COLS).eq('tg_thread_id', threadId).maybeSingle<ChatSession>();
+    if (s) { await answer(cfg, client, s, text, msg.message_id); return; }
+  }
+
+  // a Telegram reply to a visitor's message still works
+  const repliedTo = msg.reply_to_message?.message_id;
+  if (repliedTo) {
+    const { data: original } = await client.from('chat_messages').select('session_id').eq('tg_message_id', repliedTo).maybeSingle();
+    const s = original ? await getSession(client, original.session_id) : null;
+    if (s) { await answer(cfg, client, s, text, msg.message_id); return; }
+  }
+
+  // the visitor picked with "Ответить"
+  const active = await activeSession(client);
+  if (active) { await answer(cfg, client, active, text, msg.message_id); return; }
+
+  await sendToOwner(cfg, 'Сначала выбери, кому пишешь: «Ответить» под сообщением или кнопка «Чаты».', threadId, MENU);
 }
 
 Deno.serve(async (req) => {
@@ -65,43 +137,11 @@ Deno.serve(async (req) => {
 
   try {
     const update = await req.json();
-    const msg = update?.message;
-    if (!msg || String(msg.chat?.id) !== cfg.ownerChatId || typeof msg.text !== 'string') return ok();
     const client = db();
-    const text: string = msg.text.trim();
-    const threadId: number | undefined = msg.message_thread_id;
-
-    if (text.startsWith('/chats')) { await listChats(cfg, client, threadId); return ok(); }
-    if (text.startsWith('/start') || text.startsWith('/help')) { await sendToOwner(cfg, HELP, threadId); return ok(); }
-    if (text.startsWith('/to')) {
-      const [, id, ...rest] = text.split(/\s+/);
-      const body = rest.join(' ');
-      const short = (id ?? '').replace(/^#/, '').toLowerCase();
-      if (!/^[0-9a-f]{4}$/.test(short) || !body) { await sendToOwner(cfg, 'usage: /to a1b2 your answer', threadId); return ok(); }
-      const { data: matches } = await client.from('chat_sessions').select(SESSION_COLS).gte('id', `${short}0000-0000-0000-0000-000000000000`).lte('id', `${short}ffff-ffff-ffff-ffff-ffffffffffff`).limit(2);
-      if (matches?.length !== 1) { await sendToOwner(cfg, matches?.length ? 'Two chats share that id, answer inside the topic instead.' : `No chat #${short}.`, threadId); return ok(); }
-      await answer(cfg, client, matches[0] as ChatSession, body, msg.message_id);
-      await sendToOwner(cfg, `sent to ${matches[0].name}.`, threadId);
-      return ok();
-    }
-
-    // inside a visitor's topic: everything written there is for them
-    if (threadId) {
-      const { data: session } = await client.from('chat_sessions').select(SESSION_COLS).eq('tg_thread_id', threadId).maybeSingle<ChatSession>();
-      if (session) { await answer(cfg, client, session, text, msg.message_id); return ok(); }
-    }
-
-    // main chat: a reply to one of the visitor's messages
-    const repliedTo = msg.reply_to_message?.message_id;
-    if (repliedTo) {
-      const { data: original } = await client.from('chat_messages').select('session_id').eq('tg_message_id', repliedTo).maybeSingle();
-      const { data: session } = original
-        ? await client.from('chat_sessions').select(SESSION_COLS).eq('id', original.session_id).maybeSingle<ChatSession>()
-        : { data: null };
-      if (session) { await answer(cfg, client, session, text, msg.message_id); return ok(); }
-    }
-
-    await sendToOwner(cfg, 'Not sure who this is for. Write inside a visitor\'s topic, reply to their message, or use /to <id> <text>. /chats lists them.', threadId);
+    const cq = update?.callback_query;
+    if (cq && String(cq.from?.id) === cfg.ownerChatId) { await onCallback(cfg, client, cq); return ok(); }
+    const msg = update?.message;
+    if (msg && String(msg.chat?.id) === cfg.ownerChatId && typeof msg.text === 'string') await onMessage(cfg, client, msg);
     return ok();
   } catch (err) {
     console.error('tg-webhook', err);

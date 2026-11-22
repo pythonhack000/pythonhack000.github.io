@@ -39,15 +39,29 @@ export async function tg<T = unknown>(cfg: TelegramConfig, method: string, param
   return json.result as T;
 }
 
-/** a message to the owner, in a topic when given; returns its message id */
-export async function sendToOwner(cfg: TelegramConfig, text: string, threadId?: number | null): Promise<number | null> {
+export type Markup = Record<string, unknown>;
+
+/** a message to the owner, in a topic when given, with optional buttons; returns its message id */
+export async function sendToOwner(cfg: TelegramConfig, text: string, threadId?: number | null, markup?: Markup): Promise<number | null> {
   const params: Record<string, unknown> = { chat_id: cfg.ownerChatId, text, disable_web_page_preview: true };
   if (threadId) params.message_thread_id = threadId;
+  if (markup) params.reply_markup = markup;
   const msg = await tg<{ message_id: number }>(cfg, 'sendMessage', params);
   return msg?.message_id ?? null;
 }
 
 export const shortId = (id: string) => id.slice(0, 4);
+
+/* callback data (max 64 bytes): r:<uuid> reply, h:<uuid> history, l list, x stop replying */
+export const visitorButtons = (s: { id: string; name: string }): Markup => ({
+  inline_keyboard: [[
+    { text: `Ответить: ${s.name}`.slice(0, 40), callback_data: `r:${s.id}` },
+    { text: 'История', callback_data: `h:${s.id}` },
+  ]],
+});
+
+/** the always-visible keyboard under the input */
+export const MENU: Markup = { keyboard: [[{ text: 'Чаты' }]], resize_keyboard: true, is_persistent: true };
 const topicName = (s: ChatSession, awaiting: boolean) => `${awaiting ? AWAITING_MARK : ''}${s.name} · #${shortId(s.id)}`.slice(0, TOPIC_MAX);
 
 /** the visitor's topic, created on their first message; null when topics are off for this bot */
@@ -56,7 +70,7 @@ export async function ensureThread(cfg: TelegramConfig, client: SupabaseClient, 
   const topic = await tg<{ message_thread_id: number }>(cfg, 'createForumTopic', { chat_id: cfg.ownerChatId, name: topicName(s, true) });
   if (!topic) return null;
   await client.from('chat_sessions').update({ tg_thread_id: topic.message_thread_id, awaiting: true }).eq('id', s.id);
-  await sendToOwner(cfg, `New chat from the site: ${s.name}.\nWrite in this topic and it goes straight to them. No need to reply to a message.`, topic.message_thread_id);
+  await sendToOwner(cfg, `Новый чат с сайта: ${s.name}.\nПиши в эту тему, и всё уйдёт этому человеку.`, topic.message_thread_id);
   return topic.message_thread_id;
 }
 
