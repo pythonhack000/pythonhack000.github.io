@@ -12,6 +12,10 @@
   const POLL_HIDDEN_MS = 10000;   // background tab: slower, but never stopped
   const CLOCK_MS = 30000;
   const TZ = 'Asia/Dushanbe';
+  const WORD_MS = 38;            // words surface one after another, like LUNA in Lunar Navigator
+  const REVEAL_MAX_MS = 2400;    // a long answer does not crawl
+  const TYPING_BEAT_MS = 700;    // the dots show for a moment before each answer
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- state ---------- */
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || null; } catch (e) { return null; } };
@@ -67,11 +71,28 @@
   const paintMeta = () => { meta.textContent = `${clock()} in Dushanbe. I answer from Telegram, usually the same day.`; };
   const time = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   /* "bekha> typing..." while I have the visitor picked in Telegram; always the last line */
-  const typingEl = h('p', 'chat__line is-owner is-loading is-typing');
-  typingEl.append(h('span', 'chat__who', 'bekha>'), document.createTextNode('typing'));
+  const dots = () => { const d = h('span', 'chat__dots'); d.setAttribute('aria-hidden', 'true'); d.append(h('i'), h('i'), h('i')); return d; };
+  const typingEl = h('p', 'chat__line is-owner is-typing');
+  typingEl.append(h('span', 'chat__who', 'bekha>'), dots());
+  typingEl.setAttribute('aria-label', 'Bekha is typing');
+  let revealing = 0;   // answers waiting behind the dots: keep the dots up until they are out
   function showTyping(on) {
-    if (on && open) { if (typingEl.parentNode !== log) { log.append(typingEl); log.scrollTop = log.scrollHeight; } }
+    if ((on || revealing) && open) { if (typingEl.parentNode !== log) { log.append(typingEl); log.scrollTop = log.scrollHeight; } }
     else typingEl.remove();
+  }
+  /* words fade in from a soft blur, one after another */
+  function revealWords(p, text) {
+    p.lastChild.remove();
+    const box = h('span', 'chat__reveal');
+    let i = 0;
+    text.split(/(\s+)/).forEach((part) => {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { box.append(document.createTextNode(part)); return; }
+      const w = h('span', 'chat__word', part);
+      w.style.animationDelay = `${Math.min(i++ * WORD_MS, REVEAL_MAX_MS)}ms`;
+      box.append(w);
+    });
+    p.append(box);
   }
   function line(who, text, cls) {
     const p = h('p', `chat__line ${cls || ''}`);
@@ -81,12 +102,25 @@
     log.scrollTop = log.scrollHeight;
     return p;
   }
-  function paintMessage(m) {
+  /** live = it just arrived (not history): my answers then get the dots and the word-by-word reveal */
+  function paintMessage(m, live = false) {
     if (shown.has(m.id)) return;
     shown.add(m.id);
-    if (m.from_owner) showTyping(false);
-    const p = line(m.from_owner ? 'bekha>' : `${chat.name}>`, m.body, m.from_owner ? 'is-owner' : 'is-me');
-    p.title = time(m.created_at);
+    const draw = () => {
+      const p = line(m.from_owner ? 'bekha>' : `${chat.name}>`, m.body, m.from_owner ? 'is-owner' : 'is-me');
+      p.title = time(m.created_at);
+      if (m.from_owner && live && !REDUCED) revealWords(p, m.body);
+      return p;
+    };
+    if (!(m.from_owner && live) || REDUCED) { draw(); return; }
+    revealing += 1;
+    showTyping(true);
+    setTimeout(() => {
+      revealing -= 1;
+      if (!revealing) typingEl.remove();
+      draw();
+      log.scrollTop = log.scrollHeight;
+    }, TYPING_BEAT_MS);
   }
   function setMode() {
     if (!chat) {
@@ -128,7 +162,7 @@
       list.forEach((m) => {
         if (m.from_owner && !shown.has(m.id) && m.id > (chat.seen || 0)) fresh += 1;
         chat.last = Math.max(chat.last || 0, m.id);
-        if (open) paintMessage(m);
+        if (open) paintMessage(m, true);
       });
       if (open) chat.seen = chat.last;
       showTyping(!!json.meta?.typing);
@@ -147,6 +181,7 @@
   /* a status line with running dots while the server works; returns a function that removes it */
   function loading(text) {
     const p = line('', text, 'is-sys is-loading');
+    p.append(dots());
     return () => p.remove();
   }
   /* the input is locked while a request runs, so a second Enter cannot be lost */
@@ -163,7 +198,7 @@
     try {
       const list = await api({ action: 'poll', token: chat.token, after: 0 });
       done();
-      list.forEach(paintMessage);
+      list.forEach((m) => paintMessage(m));
       if (list.length) chat.last = Math.max(chat.last || 0, list[list.length - 1].id);
       chat.seen = chat.last;
       persist();
@@ -189,6 +224,7 @@
         return;
       }
       const pending = line(`${chat.name}>`, text.slice(0, BODY_MAX), 'is-me is-pending');   // shown at once, confirmed below
+      pending.append(dots());
       done = () => pending.remove();
       lock(true, 'sending...');
       const m = await api({ action: 'send', token: chat.token, body: text.slice(0, BODY_MAX) });
