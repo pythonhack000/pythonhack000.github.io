@@ -70,7 +70,7 @@ async function answer(cfg: TelegramConfig, client: SupabaseClient, s: ChatSessio
     .insert({ session_id: s.id, from_owner: true, body: text.slice(0, BODY_MAX), tg_message_id: tgMessageId })
     .select('created_at').single();
   if (error) { console.error('tg-webhook insert', error.message); return false; }
-  await client.from('chat_sessions').update({ last_message_at: msg.created_at }).eq('id', s.id);
+  await client.from('chat_sessions').update({ last_message_at: msg.created_at, owner_typing_at: null }).eq('id', s.id);
   await markAwaiting(cfg, client, s, false);
   await tg(cfg, 'setMessageReaction', { chat_id: cfg.ownerChatId, message_id: tgMessageId, reaction: [{ type: 'emoji', emoji: '👌' }] });
   return true;
@@ -83,7 +83,7 @@ async function onCallback(cfg: TelegramConfig, client: SupabaseClient, cq: Recor
   const toast = (text: string) => tg(cfg, 'answerCallbackQuery', { callback_query_id: cq.id, text });
 
   if (data === 'l') { await show(cfg, await listScreen(client), msgId); await toast(''); return; }
-  if (data === 'x') { await setActive(client, null); await toast('Режим ответа выключен'); await sendToOwner(cfg, 'Ок, никому не отвечаешь. Выбери человека в «Чаты».', null, MENU); return; }
+  if (data === 'x') { await client.from('chat_sessions').update({ owner_typing_at: null }).not('owner_typing_at', 'is', null); await setActive(client, null); await toast('Режим ответа выключен'); await sendToOwner(cfg, 'Ок, никому не отвечаешь. Выбери человека в «Чаты».', null, MENU); return; }
 
   const [kind, id] = [data.slice(0, 1), data.slice(2)];
   const s = await getSession(client, id);
@@ -91,6 +91,7 @@ async function onCallback(cfg: TelegramConfig, client: SupabaseClient, cq: Recor
   if (kind === 'h') { await show(cfg, await historyScreen(client, s), msgId); await toast(''); return; }
   if (kind === 'r') {
     await setActive(client, s.id);
+    await client.from('chat_sessions').update({ owner_typing_at: new Date().toISOString() }).eq('id', s.id);   // the visitor sees "typing..." 
     await toast(`Пишешь: ${s.name}`);
     await sendToOwner(cfg, `Пишешь ${s.name}. Всё, что напишешь дальше, уйдёт этому человеку.`, null,
       { inline_keyboard: [[{ text: 'История', callback_data: `h:${s.id}` }, { text: 'Хватит отвечать', callback_data: 'x' }]] });

@@ -8,6 +8,7 @@ const BODY_MAX = 1000;
 const MAX_BODY_BYTES = 4096;
 const POLL_LIMIT = 50;
 const TOKEN_RE = /^[0-9a-f-]{72,80}$/;
+const TYPING_MS = 2 * 60 * 1000;   // "typing" fades if no answer comes
 const MINUTE = 60;
 const HOUR = 3600;
 const DAY = 24 * HOUR;
@@ -45,7 +46,7 @@ Deno.serve(async (req) => {
 
     const token = typeof body.token === 'string' ? body.token : '';
     if (!TOKEN_RE.test(token)) return fail(req, 401, 'no chat');
-    const { data: session } = await client.from('chat_sessions').select('id, name, tg_thread_id, awaiting').eq('token_hash', await sha256(token)).maybeSingle<ChatSession>();
+    const { data: session } = await client.from('chat_sessions').select('id, name, tg_thread_id, awaiting, owner_typing_at').eq('token_hash', await sha256(token)).maybeSingle<ChatSession & { owner_typing_at: string | null }>();
     if (!session) return fail(req, 401, 'no chat');
 
     if (body.action === 'poll') {
@@ -54,7 +55,8 @@ Deno.serve(async (req) => {
         .select('id, from_owner, body, created_at')
         .eq('session_id', session.id).gt('id', after).order('id', { ascending: true }).limit(POLL_LIMIT);
       if (error) throw new Error(error.message);
-      return reply(req, 200, { success: true, data });
+      const typing = !!session.owner_typing_at && Date.now() - new Date(session.owner_typing_at).getTime() < TYPING_MS;
+      return reply(req, 200, { success: true, data, meta: { typing } });
     }
 
     if (body.action === 'send') {

@@ -10,6 +10,7 @@ export interface Envelope<T> {
   success: boolean;
   data?: T;
   error?: string;
+  meta?: Record<string, unknown>;
 }
 
 export function cors(req: Request): Record<string, string> {

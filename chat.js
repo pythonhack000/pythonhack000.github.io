@@ -9,6 +9,7 @@
   const BODY_MAX = 1000;
   const POLL_OPEN_MS = 3000;
   const POLL_CLOSED_MS = 20000;
+  const POLL_HIDDEN_MS = 10000;   // background tab: slower, but never stopped
   const CLOCK_MS = 30000;
   const TZ = 'Asia/Dushanbe';
 
@@ -65,17 +66,25 @@
   const clock = () => new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
   const paintMeta = () => { meta.textContent = `${clock()} in Dushanbe. I answer from Telegram, usually the same day.`; };
   const time = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  /* "bekha> typing..." while I have the visitor picked in Telegram; always the last line */
+  const typingEl = h('p', 'chat__line is-owner is-loading is-typing');
+  typingEl.append(h('span', 'chat__who', 'bekha>'), document.createTextNode('typing'));
+  function showTyping(on) {
+    if (on && open) { if (typingEl.parentNode !== log) { log.append(typingEl); log.scrollTop = log.scrollHeight; } }
+    else typingEl.remove();
+  }
   function line(who, text, cls) {
     const p = h('p', `chat__line ${cls || ''}`);
     if (who) p.append(h('span', 'chat__who', who));
     p.append(document.createTextNode(text));
-    log.append(p);
+    log.insertBefore(p, typingEl.parentNode === log ? typingEl : null);
     log.scrollTop = log.scrollHeight;
     return p;
   }
   function paintMessage(m) {
     if (shown.has(m.id)) return;
     shown.add(m.id);
+    if (m.from_owner) showTyping(false);
     const p = line(m.from_owner ? 'bekha>' : `${chat.name}>`, m.body, m.from_owner ? 'is-owner' : 'is-me');
     p.title = time(m.created_at);
   }
@@ -97,22 +106,24 @@
   }
 
   /* ---------- server ---------- */
-  async function api(body) {
+  /** the envelope's data; with full = true the whole envelope (poll needs meta.typing) */
+  async function api(body, full = false) {
     if (!API) throw new Error('the chat is offline right now. type telegram in the terminal');
     const res = await fetch(`${API}/chat`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const json = await res.json().catch(() => ({ success: false, error: `http ${res.status}` }));
     if (res.status === 401) { chat = null; persist(); setMode(); }
     if (!json.success) throw new Error(json.error || `http ${res.status}`);
-    return json.data;
+    return full ? json : json.data;
   }
 
   async function poll() {
     clearTimeout(pollTimer);
-    if (!chat || document.hidden) return;
+    if (!chat) return;
     if (polling) { pollAgain = true; return; }
     polling = true;
     try {
-      const list = await api({ action: 'poll', token: chat.token, after: chat.last || 0 });
+      const json = await api({ action: 'poll', token: chat.token, after: chat.last || 0 }, true);
+      const list = json.data;
       let fresh = 0;
       list.forEach((m) => {
         if (m.from_owner && !shown.has(m.id) && m.id > (chat.seen || 0)) fresh += 1;
@@ -120,6 +131,7 @@
         if (open) paintMessage(m);
       });
       if (open) chat.seen = chat.last;
+      showTyping(!!json.meta?.typing);
       persist();
       if (fresh) { sfx()?.ping(true, 2); if (!open) unread(fresh + (Number(badge.textContent) || 0)); }
     } catch (err) {
@@ -128,7 +140,7 @@
       polling = false;
     }
     if (pollAgain) { pollAgain = false; poll(); return; }
-    if (chat) pollTimer = setTimeout(poll, open ? POLL_OPEN_MS : POLL_CLOSED_MS);
+    if (chat) pollTimer = setTimeout(poll, document.hidden ? POLL_HIDDEN_MS : open ? POLL_OPEN_MS : POLL_CLOSED_MS);
   }
 
   /* history: the whole conversation from the start when the panel opens */
@@ -233,7 +245,11 @@
     submit(text);
   });
   input.addEventListener('keydown', (e) => { if (e.key.length === 1 || e.key === 'Backspace') sfx()?.key(e.key === ' ' ? 'space' : 'char'); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+  /* coming back to the tab (Telegram on top, phone unlocked, back button): check at once */
+  const wake = () => { if (!document.hidden) poll(); };
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('focus', wake);
+  window.addEventListener('pageshow', wake);
   setInterval(() => { if (open) paintMeta(); }, CLOCK_MS);
   if (chat) poll();   // a returning visitor gets the badge if I answered while they were away
 
