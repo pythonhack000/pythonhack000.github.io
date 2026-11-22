@@ -240,6 +240,25 @@
     out.scrollTop = out.scrollHeight;
   };
   const go = (url) => { if (url) window.open(url, url.startsWith('mailto:') ? '_self' : '_blank', 'noopener'); };
+
+  /* extension points for ctf.js, ssh.js, gitlog.js and resume: commands, files, sudo rules, input capture */
+  const ext = { commands: new Map(), files: new Map(), sudo: [], help: [], capture: null };
+  window.bekhaShell = Object.freeze({
+    print,
+    go,
+    input,
+    /* fx.js types into the shell as if someone were at the keyboard (run() echoes the line itself) */
+    run: (line) => { if (input && !term.classList.contains('is-closed')) run(line); },
+    ago: (iso) => ago(iso),
+    /** @param {string} name @param {(args: string[], raw: string) => void} fn @param {string} [help] */
+    command(name, fn, help) { ext.commands.set(name, fn); if (help) ext.help.push([`  ${help}`]); },
+    /** @param {string} path full path as typed, e.g. /root/flag.txt @param {() => Array<[string, string?]>} read */
+    file(path, read) { ext.files.set(path, read); },
+    /** @param {(args: string[]) => boolean} rule returns true when it handled the sudo line */
+    sudo(rule) { ext.sudo.push(rule); },
+    /** route the next lines to fn instead of the shell (ssh message entry); null hands control back */
+    capture(fn, prompt) { ext.capture = fn; if (psEl) psEl.textContent = fn ? (prompt || '>') : `bekha@dushanbe:${cwd}$`; },
+  });
   const jump = (id) => document.getElementById(id)?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
   const setCwd = (dir) => {
     cwd = dir;
@@ -280,6 +299,7 @@
       ['  sound on|off    interface sound'],
       ['  sound pack <n>  retro, cyber or cinema'],
       ['  sudo hire-me    you know what this does'],
+      ...ext.help,
       ['  clear, exit'],
     ],
     whoami: () => {
@@ -336,6 +356,7 @@
 
   function cat(arg) {
     if (!arg) return [['cat: what? e.g. cat tradeboard', 'err']];
+    if (ext.files.has(arg)) return ext.files.get(arg)();
     const clean = arg.replace(/^.*\//, '');
     if (clean === 'security.log') return Array.from(document.querySelectorAll('.log li')).map((li) => [li.textContent.trim()]);
     if (clean === 'nasa.txt') return COMMANDS.nasa();
@@ -346,19 +367,21 @@
   }
 
   function run(raw) {
+    if (ext.capture) { print(`> ${raw}`, 'echo'); ext.capture(raw); return; }
     const line = raw.trim();
     if (!line) return;
     print(`${cwd}$ ${line}`, 'echo');
     setTimeout(() => window.bekhaExtras?.sound.data(110), 70);
     const [cmd, ...args] = line.toLowerCase().split(/\s+/);
     const say = (lines) => lines.forEach(([text, cls]) => print(text, cls));
+    if (ext.commands.has(cmd)) { ext.commands.get(cmd)(line.split(/\s+/).slice(1), line); return; }
 
     if (cmd === 'sudo') {
       if (args.join(' ') === 'hire-me' || args.join(' ') === 'hire me') {
         print('[sudo] password for visitor: ********');
         print('access granted. opening a chat with Bekha...', 'hl');
         go(LINKS.telegram);
-      } else {
+      } else if (!ext.sudo.some((rule) => rule(args))) {
         print('visitor is not in the sudoers file. This incident will be reported.', 'err');
       }
       return;
@@ -483,7 +506,7 @@
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const v = input.value;
-      if (v.trim()) { history.push(v); histIdx = history.length; }
+      if (v.trim() && !ext.capture) { history.push(v); histIdx = history.length; }
       input.value = '';
       run(v);
     });
@@ -496,7 +519,7 @@
       if (e.key === 'Tab' && input.value.trim()) {
         const v = input.value.toLowerCase().trim();
         const [cmd] = v.split(/\s+/);
-        let pool = WORDS;
+        let pool = WORDS.concat([...ext.commands.keys()], ['ssh bekha', 'git log', 'ctf join', 'ctf top', 'resume --pdf']);
         if (cmd === 'open' || cmd === 'run') pool = PROJECTS.map((p) => `${cmd} ${p.name}`);
         if (cmd === 'cat') pool = PROJECTS.map((p) => `cat ${p.name}`).concat(FILES.map((f) => `cat ${f}`));
         if (cmd === 'cd' || cmd === 'ls') pool = ['work', 'whoami', 'contact'].map((d) => `${cmd} ${d}`);
@@ -510,6 +533,7 @@
       if (e.key === 'ArrowUp' && histIdx > 0) { histIdx -= 1; input.value = history[histIdx]; e.preventDefault(); }
       if (e.key === 'ArrowDown') { histIdx = Math.min(history.length, histIdx + 1); input.value = history[histIdx] ?? ''; e.preventDefault(); }
       if (e.key === 'l' && e.ctrlKey) { out.textContent = ''; e.preventDefault(); }
+      if (e.key === 'c' && e.ctrlKey && ext.capture) { e.preventDefault(); input.value = ''; ext.capture('\u0003'); }
     });
 
     document.addEventListener('keydown', (e) => {
@@ -658,10 +682,4 @@
   /* after the opening shot the name decrypts once more, in front of the visitor */
   document.addEventListener('bekha:intro-done', () => { if (nameEl) decrypt(nameEl, 900); });
 
-  /* a small handle for fx.js: type into the shell as if someone were at the keyboard (run() echoes the line itself) */
-  window.bekhaShell = {
-    run: (line) => { if (input && !term.classList.contains('is-closed')) run(line); },
-    print: (text, cls) => print(text, cls),
-    input,
-  };
 })();

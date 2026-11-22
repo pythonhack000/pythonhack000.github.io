@@ -25,6 +25,7 @@
 </script>
 </head>
 <body>
+<!-- TODO before deploy: remove the debug note. flag{v13w_th3_s0urc3_250a8c75} -->
 <div class="intro" id="intro" aria-hidden="true">
   <canvas></canvas>
   <pre class="intro__log"></pre>
@@ -212,6 +213,7 @@
           <div><dt>Mode</dt><dd data-i18n="neoMode">solo: design, code, deploy</dd></div>
           <div id="ghRepos" hidden><dt>Repos</dt><dd></dd></div>
           <div id="ghPush" hidden><dt>Last push</dt><dd></dd></div>
+          <div id="ghCommit" hidden><dt>Last commit</dt><dd></dd></div>
         </dl>
         <p class="neo__swatch" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></p>
       </div>
@@ -249,13 +251,18 @@
   <p data-i18n="foot">&copy; 2026 Bekha. Built by hand, no templates.</p>
 </footer>
 
-<script src="i18n.js?v=8" defer></script>
+<script src="i18n.js?v=9" defer></script>
 <script src="earth-map.js?v=1" defer></script>
 <script src="globe.js?v=9" defer></script>
 <script src="intro.js?v=4" defer></script>
 <script src="sound.js?v=5" defer></script>
-<script src="extras.js?v=12" defer></script>
-<script src="script.js?v=22" defer></script>
+<script src="extras.js?v=13" defer></script>
+<script src="config.js?v=1" defer></script>
+<script src="script.js?v=23" defer></script>
+<script src="ctf.js?v=1" defer></script>
+<script src="ssh.js?v=1" defer></script>
+<script src="gitlog.js?v=1" defer></script>
+<script src="resume.js?v=1" defer></script>
 <script src="fx.js?v=5" defer></script>
 <script src="os.js?v=2" defer></script>
 </body>

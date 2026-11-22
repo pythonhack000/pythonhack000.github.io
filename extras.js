@@ -50,7 +50,7 @@
       const head = [(body[0][0] + dir[0] + COLS) % COLS, (body[0][1] + dir[1] + ROWS) % ROWS];
       if (body.some(([x, y]) => x === head[0] && y === head[1])) return end();
       body = [head, ...body];
-      if (head[0] === food[0] && head[1] === food[1]) { score += 1; food = place(); sound.blip(880); }
+      if (head[0] === food[0] && head[1] === food[1]) { score += 1; food = place(); sound.blip(880); document.dispatchEvent(new CustomEvent('bekha:snake', { detail: score })); }
       else body = body.slice(0, -1);
       render();
     }
