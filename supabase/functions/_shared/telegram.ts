@@ -13,7 +13,44 @@ export interface ChatSession {
   name: string;
   tg_thread_id: number | null;
   awaiting: boolean;
+  tz?: string | null;
+  lang?: string | null;
+  visitor_chats?: number | null;
+  visitor_prev_name?: string | null;
+  visitor_prev_at?: string | null;
 }
+
+/** the columns every bot screen reads */
+export const SESSION_COLS = 'id, name, tg_thread_id, awaiting, tz, lang, visitor_chats, visitor_prev_name, visitor_prev_at';
+
+/** "5 мин", "3 ч", "2 д" */
+export function ago(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'сейчас';
+  if (s < 3600) return `${Math.floor(s / 60)} мин`;
+  if (s < 86400) return `${Math.floor(s / 3600)} ч`;
+  return `${Math.floor(s / 86400)} д`;
+}
+
+/** "Asia/Dushanbe" -> "Dushanbe" */
+export const place = (tz: string | null | undefined) => (tz ? tz.split('/').pop()!.replace(/_/g, ' ') : '');
+
+/** where the visitor writes from and whether they came back: "Berlin · de · 3-й чат, прошлый раз Ann, 2 д назад" */
+export function aboutVisitor(s: ChatSession): string {
+  const parts = [place(s.tz), s.lang ?? ''].filter(Boolean);
+  const n = s.visitor_chats ?? 0;
+  if (n > 1) {
+    const prev = s.visitor_prev_name && s.visitor_prev_name !== s.name ? `прошлый раз ${s.visitor_prev_name}, ` : 'прошлый раз ';
+    parts.push(`${n}-й чат, ${prev}${ago(s.visitor_prev_at)} назад`);
+  } else if (n === 1) {
+    parts.push('впервые');
+  }
+  return parts.join(' · ');
+}
+
+/** aboutVisitor as its own line, or nothing for chats started before this was recorded */
+export const aboutLine = (s: ChatSession) => { const about = aboutVisitor(s); return about ? `${about}\n` : ''; };
 
 const TOPIC_MAX = 128;
 const AWAITING_MARK = '● ';

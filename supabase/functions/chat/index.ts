@@ -1,7 +1,7 @@
 // Live chat for the site. A visitor starts a session under a name and gets a secret token;
 // each message is forwarded to Bekha's Telegram, his replies come back through tg-webhook.
 import { allow, clientKey, db, fail, preflight, readJson, reply, sha256 } from '../_shared/http.ts';
-import { ensureThread, markAwaiting, sendToOwner, telegramConfig, visitorButtons, type ChatSession, type TelegramConfig } from '../_shared/telegram.ts';
+import { aboutVisitor, ensureThread, markAwaiting, sendToOwner, SESSION_COLS, telegramConfig, visitorButtons, type ChatSession, type TelegramConfig } from '../_shared/telegram.ts';
 
 const NAME_MAX = 32;
 const BODY_MAX = 1000;
@@ -13,9 +13,30 @@ const MINUTE = 60;
 const HOUR = 3600;
 const DAY = 24 * HOUR;
 
-/** trim, drop control characters, collapse whitespace */
+const SEND_PER_IP_DAY = 80;   // well under the global cap, so one client cannot close the chat for everyone
+const SEND_ALL_DAY = 400;
+// names that would read as Bekha himself in the bot ("ты: ..." is how his own lines are shown)
+const RESERVED_NAMES = new Set(['ты', 'you', 'бекха', 'bekha', 'behruz', 'бехруз']);
+
+/** trim, drop control and invisible formatting characters (zero-width, bidi overrides, line separators), collapse whitespace */
 const clean = (v: unknown, max: number): string =>
-  typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/[ \t]+/g, ' ').trim().slice(0, max) : '';
+  typeof v === 'string'
+    ? v.replace(/[\u0000-\u0008\u000B-\u001F\u007F\u200B-\u200F\u2028-\u202E\u2060-\u2064\uFEFF]/g, '').replace(/[ \t]+/g, ' ').trim().slice(0, max)
+    : '';
+const VISITOR_RE = /^[0-9a-f-]{36}$/;
+const TZ_RE = /^[A-Za-z]+(?:\/[A-Za-z0-9_+-]+){1,2}$/;
+const LANG_RE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8}){0,2}$/;
+const pick = (v: unknown, re: RegExp, max: number) => (typeof v === 'string' && v.length <= max && re.test(v) ? v : null);
+
+/** the browser's own random id, hashed: enough to say "came back", nothing to identify a person */
+async function visitorBefore(client: ReturnType<typeof db>, visitor: string | null) {
+  if (!visitor) return { idHash: null, prev: null };
+  const idHash = await sha256(`visitor|${visitor}`);
+  const { data: prev } = await client.from('chat_visitors').select('chats, last_name, last_seen').eq('id_hash', idHash).maybeSingle();
+  return { idHash, prev };
+}
+
+const nameTaken = (name: string) => `the name "${name}" is taken. pick another one, for example ${name.slice(0, NAME_MAX - 2)}_2`;
 
 /* Bekha's bot works like a messenger: when he is inside this visitor's chat, their message arrives as
    plain text and he just keeps typing; anyone else arrives with a button to switch over. */
@@ -30,7 +51,8 @@ async function toOwnerChat(cfg: TelegramConfig, client: ReturnType<typeof db>, s
     ? (await client.from('chat_sessions').select('name').eq('id', data.active_session).maybeSingle()).data?.name
     : null;
   const note = busyWith ? `\n\n(ты сейчас в чате с ${busyWith})` : '';
-  return sendToOwner(cfg, `Новое сообщение от ${session.name}:\n${text}${note}`, null, visitorButtons(session));
+  const about = aboutVisitor(session);
+  return sendToOwner(cfg, `Новое сообщение от ${session.name}${about ? ` (${about})` : ''}:\n${text}${note}`, null, visitorButtons(session));
 }
 
 Deno.serve(async (req) => {
@@ -45,16 +67,36 @@ Deno.serve(async (req) => {
     if (body.action === 'start') {
       const name = clean(body.name, NAME_MAX).replace(/\n/g, ' ');
       if (!name) return fail(req, 400, 'a name, please');
+      if (RESERVED_NAMES.has(name.toLowerCase())) return fail(req, 409, nameTaken(name));
+      // a taken name should not cost one of the visitor's five starts; the unique index still settles races
+      const { count: sameName } = await client.from('chat_sessions').select('id', { count: 'exact', head: true }).ilike('name', name.replace(/[\\%_]/g, '\\$&'));
+      if (sameName) return fail(req, 409, nameTaken(name));
       if (!(await allow(client, await clientKey(req, 'chat-start'), 5, HOUR))) return fail(req, 429, 'too many chats from here, try in an hour');
       const token = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
-      const { data, error } = await client.from('chat_sessions').insert({ name, token_hash: await sha256(token) }).select('id, name').single();
+      const { idHash, prev } = await visitorBefore(client, pick(body.visitor, VISITOR_RE, 36));
+      const chats = idHash ? (prev?.chats ?? 0) + 1 : null;
+      const { data, error } = await client.from('chat_sessions').insert({
+        name,
+        token_hash: await sha256(token),
+        tz: pick(body.tz, TZ_RE, 40),
+        lang: pick(body.lang, LANG_RE, 16)?.toLowerCase() ?? null,
+        visitor_chats: chats,
+        visitor_prev_name: prev?.last_name ?? null,
+        visitor_prev_at: prev?.last_seen ?? null,
+      }).select('id, name').single();
+      if (error?.code === '23505') return fail(req, 409, nameTaken(name));   // chat_sessions_name_unique
       if (error) throw new Error(error.message);
+      if (idHash) {
+        const { error: visitorError } = await client.from('chat_visitors')
+          .upsert({ id_hash: idHash, chats, last_name: name, last_seen: new Date().toISOString() });
+        if (visitorError) console.error('chat visitor', visitorError.message);   // only the "came back" hint is lost
+      }
       return reply(req, 200, { success: true, data: { token, name: data.name, session: data.id.slice(0, 4) } });
     }
 
     const token = typeof body.token === 'string' ? body.token : '';
     if (!TOKEN_RE.test(token)) return fail(req, 401, 'no chat');
-    const { data: session } = await client.from('chat_sessions').select('id, name, tg_thread_id, awaiting, owner_typing_at').eq('token_hash', await sha256(token)).maybeSingle<ChatSession & { owner_typing_at: string | null }>();
+    const { data: session } = await client.from('chat_sessions').select(`${SESSION_COLS}, owner_typing_at`).eq('token_hash', await sha256(token)).maybeSingle<ChatSession & { owner_typing_at: string | null }>();
     if (!session) return fail(req, 401, 'no chat');
 
     if (body.action === 'poll') {
@@ -72,7 +114,8 @@ Deno.serve(async (req) => {
       if (!text) return fail(req, 400, 'empty message');
       if (!(await allow(client, `chat-session:${session.id}`, 15, 10 * MINUTE))) return fail(req, 429, 'slow down a little');
       if (!(await allow(client, await clientKey(req, 'chat-send'), 60, HOUR))) return fail(req, 429, 'slow down a little');
-      if (!(await allow(client, 'chat:all', 400, DAY))) return fail(req, 429, 'the chat is full for today, write on Telegram');
+      if (!(await allow(client, await clientKey(req, 'chat-send-day'), SEND_PER_IP_DAY, DAY))) return fail(req, 429, 'that is a lot for one day. write on Telegram, or come back tomorrow');
+      if (!(await allow(client, 'chat:all', SEND_ALL_DAY, DAY))) return fail(req, 429, 'the chat is full for today, write on Telegram');
 
       const { data: msg, error } = await client.from('chat_messages').insert({ session_id: session.id, body: text }).select('id, from_owner, body, created_at').single();
       if (error) throw new Error(error.message);

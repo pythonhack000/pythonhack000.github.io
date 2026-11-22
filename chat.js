@@ -20,6 +20,23 @@
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || null; } catch (e) { return null; } };
   let chat = load();                 // { token, name, session, last, seen }
   const persist = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(chat)); } catch (e) { /* lives until reload */ } };
+
+  /* a random id that stays in this browser, so Bekha sees "came back" instead of a stranger.
+     Along with it only the browser's time zone and language go to the server: no IP, no location lookup. */
+  const VISITOR_KEY = 'chat-visitor';
+  function visitorId() {
+    try {
+      const known = localStorage.getItem(VISITOR_KEY);
+      if (known) return known;
+      const fresh = crypto.randomUUID();
+      localStorage.setItem(VISITOR_KEY, fresh);
+      return fresh;
+    } catch (e) { return ''; }   // storage blocked: every chat looks new, nothing breaks
+  }
+  const whereFrom = () => ({
+    tz: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })(),
+    lang: navigator.language || '',
+  });
   let open = false;
   let pollTimer = 0;
   let busy = false;
@@ -230,7 +247,7 @@
         const name = text.slice(0, NAME_MAX);
         lock(true, 'connecting...');
         done = loading(`connecting as ${name}`);
-        const data = await api({ action: 'start', name });
+        const data = await api({ action: 'start', name, visitor: visitorId(), ...whereFrom() });
         done();
         chat = { token: data.token, name: data.name, session: data.session, last: 0, seen: 0 };
         persist();

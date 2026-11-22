@@ -7,24 +7,17 @@
 // Only requests carrying the webhook secret, and only Bekha's own chat, are accepted.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { db } from '../_shared/http.ts';
-import { chatMenu, LEAVE_KEY, LIST_KEY, markAwaiting, MENU, sendToOwner, telegramConfig, tg, type ChatSession, type Markup, type TelegramConfig } from '../_shared/telegram.ts';
+import { aboutLine, ago, chatMenu, LEAVE_KEY, LIST_KEY, markAwaiting, MENU, place, sendToOwner, SESSION_COLS, telegramConfig, tg, type ChatSession, type Markup, type TelegramConfig } from '../_shared/telegram.ts';
 
 const BODY_MAX = 1000;
 const LIST_MAX = 12;
 const HISTORY_MAX = 12;
 const LINE_MAX = 300;
-const SESSION_COLS = 'id, name, tg_thread_id, awaiting';
 const UUID_RE = /^[0-9a-f-]{36}$/;
 const ok = () => new Response('ok');
 
-function ago(iso: string | null): string {
-  if (!iso) return '';
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'сейчас';
-  if (s < 3600) return `${Math.floor(s / 60)} мин`;
-  if (s < 86400) return `${Math.floor(s / 3600)} ч`;
-  return `${Math.floor(s / 86400)} д`;
-}
+const transcriptLine = (s: ChatSession, m: { from_owner: boolean; body: string }) =>
+  `${m.from_owner ? 'ты' : s.name}: ${m.body.replace(/\s*\n\s*/g, ' / ').slice(0, LINE_MAX)}`;
 
 const getSession = async (client: SupabaseClient, id: string) =>
   UUID_RE.test(id) ? (await client.from('chat_sessions').select(SESSION_COLS).eq('id', id).maybeSingle<ChatSession>()).data : null;
@@ -38,19 +31,19 @@ const setActive = (client: SupabaseClient, id: string | null) =>
 
 /* ---------- screens: text + buttons, shown by editing one message ---------- */
 async function listScreen(client: SupabaseClient): Promise<[string, Markup]> {
-  const { data: sessions } = await client.from('chat_sessions').select('id, name, awaiting, last_message_at')
+  const { data: sessions } = await client.from('chat_sessions').select('id, name, awaiting, last_message_at, tz, visitor_chats')
     .not('last_message_at', 'is', null).order('last_message_at', { ascending: false }).limit(LIST_MAX);
   if (!sessions?.length) return ['Пока никто не писал.', { inline_keyboard: [] }];
   const waiting = sessions.filter((s) => s.awaiting).length;
-  const rows = sessions.map((s) => [{ text: `${s.awaiting ? '● ' : ''}${s.name} · ${ago(s.last_message_at)}`.slice(0, 60), callback_data: `h:${s.id}` }]);
-  return [`Чаты: ${sessions.length}, ждут ответа: ${waiting} (●)\nНажми на человека, чтобы посмотреть переписку и войти в чат.`, { inline_keyboard: rows }];
+  const rows = sessions.map((s) => [{ text: [`${s.awaiting ? '● ' : ''}${s.name}${(s.visitor_chats ?? 0) > 1 ? ' ↺' : ''}`, place(s.tz), ago(s.last_message_at)].filter(Boolean).join(' · ').slice(0, 60), callback_data: `h:${s.id}` }]);
+  return [`Чаты: ${sessions.length}, ждут ответа: ${waiting} (●), ↺ вернулся\nНажми на человека, чтобы посмотреть переписку и войти в чат.`, { inline_keyboard: rows }];
 }
 
 async function historyScreen(client: SupabaseClient, s: ChatSession): Promise<[string, Markup]> {
   const { data: msgs } = await client.from('chat_messages').select('from_owner, body, created_at')
     .eq('session_id', s.id).order('id', { ascending: false }).limit(HISTORY_MAX);
-  const lines = (msgs ?? []).reverse().map((m) => `${m.from_owner ? 'ты' : s.name}: ${m.body.slice(0, LINE_MAX)}`);
-  const text = `${s.awaiting ? '● ждёт ответа\n' : ''}Переписка с ${s.name}\n\n${lines.join('\n\n') || 'пусто'}`;
+  const lines = (msgs ?? []).reverse().map((m) => transcriptLine(s, m));
+  const text = `${s.awaiting ? '● ждёт ответа\n' : ''}Переписка с ${s.name}\n${aboutLine(s)}\n${lines.join('\n\n') || 'пусто'}`;
   return [text.slice(0, 4000), { inline_keyboard: [
     [{ text: `Войти в чат: ${s.name}`.slice(0, 40), callback_data: `r:${s.id}` }],
     [{ text: '« Все чаты', callback_data: 'l' }],
@@ -83,8 +76,8 @@ async function enterChat(cfg: TelegramConfig, client: SupabaseClient, s: ChatSes
   await client.from('chat_sessions').update({ owner_typing_at: new Date().toISOString() }).eq('id', s.id);   // the visitor sees "typing..."
   const { data: msgs } = await client.from('chat_messages').select('from_owner, body')
     .eq('session_id', s.id).order('id', { ascending: false }).limit(HISTORY_MAX);
-  const recent = (msgs ?? []).reverse().map((m) => `${m.from_owner ? 'ты' : s.name}: ${m.body.slice(0, LINE_MAX)}`).join('\n');
-  await sendToOwner(cfg, `── чат с ${s.name} ──\n\n${recent || 'пока пусто'}\n\nПиши, всё уйдёт этому человеку.`.slice(0, 4000), null, chatMenu(s.name));
+  const recent = (msgs ?? []).reverse().map((m) => transcriptLine(s, m)).join('\n');
+  await sendToOwner(cfg, `── чат с ${s.name} ──\n${aboutLine(s)}\n${recent || 'пока пусто'}\n\nПиши, всё уйдёт этому человеку.`.slice(0, 4000), null, chatMenu(s.name));
 }
 
 async function leaveChat(cfg: TelegramConfig, client: SupabaseClient) {
