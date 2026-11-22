@@ -10,7 +10,6 @@
   const POLL_OPEN_MS = 3000;
   const POLL_CLOSED_MS = 20000;
   const POLL_HIDDEN_MS = 10000;   // background tab: slower, but never stopped
-  const CLOCK_MS = 30000;
   const TZ = 'Asia/Dushanbe';
   const WORD_MS = 38;            // words surface one after another, like LUNA in Lunar Navigator
   const REVEAL_MAX_MS = 2400;    // a long answer does not crawl
@@ -67,8 +66,16 @@
   document.body.append(launcher, panel);
 
   /* ---------- rendering ---------- */
-  const clock = () => new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-  const paintMeta = () => { meta.textContent = `${clock()} in Dushanbe. I answer from Telegram, usually the same day.`; };
+  /* a live Dushanbe clock: one text node, re-rendered on every real second while the chat is open */
+  const clockEl = h('b', 'chat__clock');
+  meta.append(clockEl, document.createTextNode(' in Dushanbe. I answer from Telegram, usually the same day.'));
+  const clock = () => new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  let clockTimer = 0;
+  function paintMeta() {
+    clearTimeout(clockTimer);
+    clockEl.textContent = clock();
+    if (open) clockTimer = setTimeout(paintMeta, 1000 - (Date.now() % 1000) + 5);   // land just after the second turns
+  }
   const time = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   /* "bekha> typing..." while I have the visitor picked in Telegram; always the last line */
   const dots = () => { const d = h('span', 'chat__dots'); d.setAttribute('aria-hidden', 'true'); d.append(h('i'), h('i'), h('i')); return d; };
@@ -272,6 +279,7 @@
   }
   function hide() {
     open = false;
+    clearTimeout(clockTimer);
     panel.hidden = true;
     launcher.setAttribute('aria-expanded', 'false');
     launcher.classList.remove('is-open');
@@ -291,11 +299,10 @@
   });
   input.addEventListener('keydown', (e) => { if (e.key.length === 1 || e.key === 'Backspace') sfx()?.key(e.key === ' ' ? 'space' : 'char'); });
   /* coming back to the tab (Telegram on top, phone unlocked, back button): check at once */
-  const wake = () => { if (!document.hidden) poll(); };
+  const wake = () => { if (!document.hidden) { poll(); if (open) paintMeta(); } };
   document.addEventListener('visibilitychange', wake);
   window.addEventListener('focus', wake);
   window.addEventListener('pageshow', wake);
-  setInterval(() => { if (open) paintMeta(); }, CLOCK_MS);
   if (chat) poll();   // a returning visitor gets the badge if I answered while they were away
 
   /* ---------- the shell ---------- */

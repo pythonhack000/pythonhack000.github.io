@@ -534,3 +534,4 @@ html.intro-on .intro {
   .chat__line, .chat__reveal .chat__word { animation: none; }
   .chat__dots i { animation-duration: 2.4s; }
 }
+.chat__clock { color: var(--amber); font-weight: 500; font-variant-numeric: tabular-nums; }
