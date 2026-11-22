@@ -1,12 +1,13 @@
-// Telegram webhook for @portfolio_bekhabot, driven by buttons:
-//   - under each visitor message: [Ответить: name] [История]
-//   - after "Ответить", every plain message goes to that visitor until another one is picked
-//   - the "Чаты" key under the input lists conversations as buttons, newest first, ● = waiting
+// Telegram webhook for @portfolio_bekhabot. Works like a messenger:
+//   - "Войти в чат" (under a visitor message, or in the "Чаты" list) opens that conversation:
+//     recent messages are shown, the keyboard switches to [« Выйти из чата] [Чаты], and from then on
+//     everything Bekha types goes to that visitor and their messages arrive as plain text
+//   - a message from anyone else arrives separately, with a button to switch to their chat
 //   - inside a visitor's topic (when topics are on) everything written goes to that visitor
 // Only requests carrying the webhook secret, and only Bekha's own chat, are accepted.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { db } from '../_shared/http.ts';
-import { markAwaiting, MENU, sendToOwner, telegramConfig, tg, visitorButtons, type ChatSession, type Markup, type TelegramConfig } from '../_shared/telegram.ts';
+import { chatMenu, LEAVE_KEY, LIST_KEY, markAwaiting, MENU, sendToOwner, telegramConfig, tg, type ChatSession, type Markup, type TelegramConfig } from '../_shared/telegram.ts';
 
 const BODY_MAX = 1000;
 const LIST_MAX = 12;
@@ -42,7 +43,7 @@ async function listScreen(client: SupabaseClient): Promise<[string, Markup]> {
   if (!sessions?.length) return ['Пока никто не писал.', { inline_keyboard: [] }];
   const waiting = sessions.filter((s) => s.awaiting).length;
   const rows = sessions.map((s) => [{ text: `${s.awaiting ? '● ' : ''}${s.name} · ${ago(s.last_message_at)}`.slice(0, 60), callback_data: `h:${s.id}` }]);
-  return [`Чаты: ${sessions.length}, ждут ответа: ${waiting} (●)\nНажми на человека, чтобы открыть переписку.`, { inline_keyboard: rows }];
+  return [`Чаты: ${sessions.length}, ждут ответа: ${waiting} (●)\nНажми на человека, чтобы посмотреть переписку и войти в чат.`, { inline_keyboard: rows }];
 }
 
 async function historyScreen(client: SupabaseClient, s: ChatSession): Promise<[string, Markup]> {
@@ -51,7 +52,7 @@ async function historyScreen(client: SupabaseClient, s: ChatSession): Promise<[s
   const lines = (msgs ?? []).reverse().map((m) => `${m.from_owner ? 'ты' : s.name}: ${m.body.slice(0, LINE_MAX)}`);
   const text = `${s.awaiting ? '● ждёт ответа\n' : ''}Переписка с ${s.name}\n\n${lines.join('\n\n') || 'пусто'}`;
   return [text.slice(0, 4000), { inline_keyboard: [
-    [{ text: `Ответить: ${s.name}`.slice(0, 40), callback_data: `r:${s.id}` }],
+    [{ text: `Войти в чат: ${s.name}`.slice(0, 40), callback_data: `r:${s.id}` }],
     [{ text: '« Все чаты', callback_data: 'l' }],
   ] }];
 }
@@ -76,6 +77,23 @@ async function answer(cfg: TelegramConfig, client: SupabaseClient, s: ChatSessio
   return true;
 }
 
+/* ---------- entering and leaving a conversation ---------- */
+async function enterChat(cfg: TelegramConfig, client: SupabaseClient, s: ChatSession) {
+  await setActive(client, s.id);
+  await client.from('chat_sessions').update({ owner_typing_at: new Date().toISOString() }).eq('id', s.id);   // the visitor sees "typing..."
+  const { data: msgs } = await client.from('chat_messages').select('from_owner, body')
+    .eq('session_id', s.id).order('id', { ascending: false }).limit(HISTORY_MAX);
+  const recent = (msgs ?? []).reverse().map((m) => `${m.from_owner ? 'ты' : s.name}: ${m.body.slice(0, LINE_MAX)}`).join('\n');
+  await sendToOwner(cfg, `── чат с ${s.name} ──\n\n${recent || 'пока пусто'}\n\nПиши, всё уйдёт этому человеку.`.slice(0, 4000), null, chatMenu(s.name));
+}
+
+async function leaveChat(cfg: TelegramConfig, client: SupabaseClient) {
+  const active = await activeSession(client);
+  if (active) await client.from('chat_sessions').update({ owner_typing_at: null }).eq('id', active.id);
+  await setActive(client, null);
+  await sendToOwner(cfg, active ? `Вышел из чата с ${active.name}.` : 'Ты ни в каком чате.', null, MENU);
+}
+
 /* ---------- button taps ---------- */
 async function onCallback(cfg: TelegramConfig, client: SupabaseClient, cq: Record<string, any>) {
   const data: string = cq.data ?? '';
@@ -83,19 +101,13 @@ async function onCallback(cfg: TelegramConfig, client: SupabaseClient, cq: Recor
   const toast = (text: string) => tg(cfg, 'answerCallbackQuery', { callback_query_id: cq.id, text });
 
   if (data === 'l') { await show(cfg, await listScreen(client), msgId); await toast(''); return; }
-  if (data === 'x') { await client.from('chat_sessions').update({ owner_typing_at: null }).not('owner_typing_at', 'is', null); await setActive(client, null); await toast('Режим ответа выключен'); await sendToOwner(cfg, 'Ок, никому не отвечаешь. Выбери человека в «Чаты».', null, MENU); return; }
+  if (data === 'x') { await toast(''); await leaveChat(cfg, client); return; }
 
   const [kind, id] = [data.slice(0, 1), data.slice(2)];
   const s = await getSession(client, id);
   if (!s) { await toast('Этого чата уже нет'); return; }
   if (kind === 'h') { await show(cfg, await historyScreen(client, s), msgId); await toast(''); return; }
-  if (kind === 'r') {
-    await setActive(client, s.id);
-    await client.from('chat_sessions').update({ owner_typing_at: new Date().toISOString() }).eq('id', s.id);   // the visitor sees "typing..." 
-    await toast(`Пишешь: ${s.name}`);
-    await sendToOwner(cfg, `Пишешь ${s.name}. Всё, что напишешь дальше, уйдёт этому человеку.`, null,
-      { inline_keyboard: [[{ text: 'История', callback_data: `h:${s.id}` }, { text: 'Хватит отвечать', callback_data: 'x' }]] });
-  }
+  if (kind === 'r') { await toast(`Чат с ${s.name}`); await enterChat(cfg, client, s); }
 }
 
 /* ---------- typed messages ---------- */
@@ -103,9 +115,10 @@ async function onMessage(cfg: TelegramConfig, client: SupabaseClient, msg: Recor
   const text: string = msg.text.trim();
   const threadId: number | undefined = msg.message_thread_id;
 
-  if (text === 'Чаты' || text.startsWith('/chats')) { await show(cfg, await listScreen(client)); return; }
+  if (text === LIST_KEY || text.startsWith('/chats')) { await show(cfg, await listScreen(client)); return; }
+  if (text === LEAVE_KEY || text.startsWith('/leave')) { await leaveChat(cfg, client); return; }
   if (text.startsWith('/start') || text.startsWith('/help')) {
-    await sendToOwner(cfg, 'Чат с сайта подключён.\n\nКогда кто-то пишет на сайте, сообщение приходит сюда с кнопками «Ответить» и «История». Нажми «Ответить» и просто пиши текстом.\n\nКнопка «Чаты» внизу показывает всех, кто писал. ● значит ждёт ответа.', threadId, MENU);
+    await sendToOwner(cfg, 'Чат с сайта подключён.\n\nКогда кто-то пишет на сайте, сообщение приходит сюда с кнопкой «Войти в чат». Нажал, и дальше это обычная переписка: его сообщения приходят сюда, ты просто пишешь.\n\n«Чаты» внизу: все, кто писал (● ждёт ответа). «« Выйти из чата»: закончить разговор.', threadId, MENU);
     return;
   }
 
@@ -123,11 +136,11 @@ async function onMessage(cfg: TelegramConfig, client: SupabaseClient, msg: Recor
     if (s) { await answer(cfg, client, s, text, msg.message_id); return; }
   }
 
-  // the visitor picked with "Ответить"
+  // the chat Bekha is in
   const active = await activeSession(client);
   if (active) { await answer(cfg, client, active, text, msg.message_id); return; }
 
-  await sendToOwner(cfg, 'Сначала выбери, кому пишешь: «Ответить» под сообщением или кнопка «Чаты».', threadId, MENU);
+  await sendToOwner(cfg, 'Ты сейчас не в чате. Нажми «Войти в чат» под сообщением или открой «Чаты».', threadId, MENU);
 }
 
 Deno.serve(async (req) => {

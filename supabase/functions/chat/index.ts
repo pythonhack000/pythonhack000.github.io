@@ -1,7 +1,7 @@
 // Live chat for the site. A visitor starts a session under a name and gets a secret token;
 // each message is forwarded to Bekha's Telegram, his replies come back through tg-webhook.
 import { allow, clientKey, db, fail, preflight, readJson, reply, sha256 } from '../_shared/http.ts';
-import { ensureThread, markAwaiting, sendToOwner, telegramConfig, visitorButtons, type ChatSession } from '../_shared/telegram.ts';
+import { ensureThread, markAwaiting, sendToOwner, telegramConfig, visitorButtons, type ChatSession, type TelegramConfig } from '../_shared/telegram.ts';
 
 const NAME_MAX = 32;
 const BODY_MAX = 1000;
@@ -17,12 +17,20 @@ const DAY = 24 * HOUR;
 const clean = (v: unknown, max: number): string =>
   typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/[ \t]+/g, ' ').trim().slice(0, max) : '';
 
-/** when Bekha is answering someone else, say so under a new visitor's message, so he does not reply to the wrong person */
-async function activeHint(client: ReturnType<typeof db>, sessionId: string): Promise<string> {
+/* Bekha's bot works like a messenger: when he is inside this visitor's chat, their message arrives as
+   plain text and he just keeps typing; anyone else arrives with a button to switch over. */
+async function toOwnerChat(cfg: TelegramConfig, client: ReturnType<typeof db>, session: ChatSession, text: string): Promise<number | null> {
   const { data } = await client.from('bot_state').select('active_session').eq('id', 1).maybeSingle();
-  if (!data?.active_session || data.active_session === sessionId) return '';
-  const { data: other } = await client.from('chat_sessions').select('name').eq('id', data.active_session).maybeSingle();
-  return other ? `\n\n(сейчас ты пишешь ${other.name}; чтобы ответить этому человеку, нажми «Ответить»)` : '';
+  if (data?.active_session === session.id) {
+    // he is in this chat: likely to answer, so the visitor sees "typing" for a moment
+    await client.from('chat_sessions').update({ owner_typing_at: new Date().toISOString() }).eq('id', session.id);
+    return sendToOwner(cfg, `${session.name}: ${text}`);
+  }
+  const busyWith = data?.active_session
+    ? (await client.from('chat_sessions').select('name').eq('id', data.active_session).maybeSingle()).data?.name
+    : null;
+  const note = busyWith ? `\n\n(ты сейчас в чате с ${busyWith})` : '';
+  return sendToOwner(cfg, `Новое сообщение от ${session.name}:\n${text}${note}`, null, visitorButtons(session));
 }
 
 Deno.serve(async (req) => {
@@ -77,7 +85,7 @@ Deno.serve(async (req) => {
         // in a topic the name is already in the title; in the main chat the header says who it is
         tgId = thread
           ? await sendToOwner(cfg, text, thread)
-          : await sendToOwner(cfg, `${session.name}:\n${text}${await activeHint(client, session.id)}`, null, visitorButtons(session));
+          : await toOwnerChat(cfg, client, session, text);
         if (thread) await markAwaiting(cfg, client, { ...session, tg_thread_id: thread, awaiting: session.tg_thread_id ? session.awaiting : true }, true);
         else await client.from('chat_sessions').update({ awaiting: true }).eq('id', session.id);
       }
