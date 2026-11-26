@@ -21,12 +21,18 @@
 
   const PROJECTS = Object.freeze([
     { name: 'lunar-navigator', what: 'NASA Space Apps 2026: Moon landing sites', url: 'https://pythonhack000.github.io/lunar-navigator/' },
+    { name: 'feudlands', what: 'daily island war inside a Reddit post', url: 'https://www.reddit.com/r/feudlands_dev/comments/1y4sw8n/feudlands_day_1_cats_or_dogs_pick_a_side_and_take/' },
+    { name: 'crumple', what: 'daily trick-shot puzzle for Reddit', url: 'https://github.com/pythonhack000/crumple' },
+    { name: 'page-100', what: 'teletext news that loads on 2G', url: 'https://pythonhack000.github.io/page-100/' },
+    { name: 'spherex-blink', what: 'NASA SPHEREx blink comparator', url: 'https://pythonhack000.github.io/spherex-blink/' },
+    { name: 'answering-machine', what: 'call screening with a brain', url: 'https://pythonhack000.github.io/answering-machine/' },
     { name: 'tradeboard', what: 'AI draws on a live trading chart', url: 'https://pythonhack000.github.io/tradevision/' },
-    { name: 'accbozor', what: 'game account marketplace with escrow', url: 'https://pythonhack000.github.io/bozor/' },
-    { name: 'flex', what: 'one pass for Dushanbe gyms', url: 'https://pythonhack000.github.io/gym/' },
-    { name: 'takhtabozor', what: 'stock and debts for a timber yard', url: 'https://pythonhack000.github.io/takhtabozor/' },
-    { name: 'bysabr', what: 'fashion store with an admin panel', url: 'https://pythonhack000.github.io/bysabr-shop/' },
+    { name: 'store-pos', what: 'desktop till and stock for a shop, Electron', url: null },
     { name: 'smart-canteen', what: 'canteen ordering app, Expo', url: 'https://github.com/pythonhack000/canteen-mobile' },
+    { name: 'accbozor', what: 'game account marketplace with escrow', url: 'https://pythonhack000.github.io/bozor/' },
+    { name: 'bysabr', what: 'fashion store with an admin panel', url: 'https://pythonhack000.github.io/bysabr-shop/' },
+    { name: 'takhtabozor', what: 'stock and debts for a timber yard', url: 'https://pythonhack000.github.io/takhtabozor/' },
+    { name: 'flex', what: 'one pass for Dushanbe gyms', url: 'https://pythonhack000.github.io/gym/' },
     { name: 'tradesignal-bot', what: 'Telegram signals bot, Python + OpenAI', url: null },
     { name: 'dii-campus', what: 'student app for DII', url: 'https://pythonhack000.github.io/dii-campus/' },
   ]);

@@ -59,7 +59,7 @@
         <h1 id="name" class="name" data-i18n="name" data-text="BEKHA">BEKHA</h1>
         <p class="lead" data-i18n="lead">Full-stack developer in Dushanbe. I build and ship web apps, mobile apps, Telegram bots and AI tools on my own, from the first commit to the live server.</p>
         <dl class="facts">
-          <div><dt data-i18n="factShipped">shipped</dt><dd data-i18n="factShippedV">10 projects</dd></div>
+          <div><dt data-i18n="factShipped">shipped</dt><dd data-i18n="factShippedV">15 projects</dd></div>
           <div><dt data-i18n="factGithub">on github</dt><dd data-i18n="factGithubV">since 2021</dd></div>
           <div><dt data-i18n="factOff">off hours</dt><dd data-i18n="factOffV">CTF and OSINT</dd></div>
         </dl>
@@ -96,7 +96,7 @@
   <!-- WORK: nmap output -->
   <section class="work" id="work" aria-labelledby="work-h">
     <p class="cmd"><span class="prompt__ps">$</span> nmap -sV --open bekha/work</p>
-    <h2 id="work-h" class="h2" data-i18n="workH" data-text="">9 open ports. Each one is a product I shipped.</h2>
+    <h2 id="work-h" class="h2" data-i18n="workH" data-text="">15 open ports. Each one is a product I shipped.</h2>
     <p class="uptime" id="uptime"><span class="led" aria-hidden="true"></span><span id="uptimeText" data-i18n="uptimeWait">uptime check runs when you scroll here</span></p>
     <p class="work-hint" data-i18n="workHint">click a port to boot the live project right here, in a window. cmd+click opens a tab.</p>
 
@@ -112,11 +112,60 @@
             <span class="row__ver" data-i18n="rowLunar">NASA Space Apps 2026, team Swarm. A 3D Moon that finds landing sites at the south pole by sunlight and line of sight to Earth, on NASA LRO terrain. React, three.js.</span>
           </a>
         </li>
+        <li class="row" data-ascii="FEUD" data-alt="Feudlands">
+          <a class="row__link" href="https://www.reddit.com/r/feudlands_dev/comments/1y4sw8n/feudlands_day_1_cats_or_dogs_pick_a_side_and_take/">
+            <span class="row__port">6667/tcp</span><span class="row__state">open</span>
+            <span class="row__name">feudlands</span>
+            <span class="row__ver" data-i18n="rowFeud">A daily war over a hand-drawn island, played inside a Reddit post. The whole subreddit fights for the same map, and the best arguments become the battle cries that win hexes. Devvit Web.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="CRUMPLE" data-alt="Crumple">
+          <a class="row__link" href="https://github.com/pythonhack000/crumple">
+            <span class="row__port">7777/tcp</span><span class="row__state">open</span>
+            <span class="row__name">crumple</span>
+            <span class="row__ver" data-i18n="rowCrumple">A daily trick-shot puzzle drawn in ballpoint pen. Every miss stays on the shared table, so you can bank off other players' balls. Phaser, Devvit, Reddit.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="P100" data-alt="Page 100">
+          <a class="row__link" href="https://pythonhack000.github.io/page-100/">
+            <span class="row__port">100/tcp</span><span class="row__state">open</span>
+            <span class="row__name">page-100</span>
+            <span class="row__ver" data-i18n="rowPage100">Teletext, resurrected: live news, weather and exchange rates on a 40 x 24 screen, about 1 KB a page, so it loads on 2G. TypeScript, Vite.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="BLINK" data-alt="SPHEREx Blink">
+          <a class="row__link" href="https://pythonhack000.github.io/spherex-blink/">
+            <span class="row__port">1930/tcp</span><span class="row__state">open</span>
+            <span class="row__name">spherex-blink</span>
+            <span class="row__ver" data-i18n="rowBlink">NASA Space Apps 2026. A blink comparator for NASA SPHEREx: enter a sky position and its exposures play like a video, so moving objects stand out. Python, JavaScript.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="CALL" data-alt="Answering Machine">
+          <a class="row__link" href="https://pythonhack000.github.io/answering-machine/">
+            <span class="row__port">5060/tcp</span><span class="row__state">open</span>
+            <span class="row__name">answering-machine</span>
+            <span class="row__ver" data-i18n="rowMachine">The answering machine, back with a brain. Strangers call a link, the machine screens them, flags scams and takes a confirmed callback number.</span>
+          </a>
+        </li>
         <li class="row" data-shot="img/work-tradevision.jpg" data-alt="TRADEBOARD: a daily Bitcoin chart with drawing tools">
           <a class="row__link" href="https://pythonhack000.github.io/tradevision/">
             <span class="row__port">443/tcp</span><span class="row__state">open</span>
             <span class="row__name">tradeboard</span>
             <span class="row__ver" data-i18n="rowTrade">AI draws trendlines and zones on a live chart while it explains them. React, TypeScript, four AI providers.</span>
+          </a>
+        </li>
+        <li class="row" data-ascii="POS" data-alt="Store POS">
+          <div class="row__link" tabindex="0">
+            <span class="row__port">9100/tcp</span><span class="row__state">open</span>
+            <span class="row__name">store-pos</span>
+            <span class="row__ver" data-i18n="rowPos">Desktop point of sale for a shop in Dushanbe: till, stock and manager in one app, replacing three old Windows programs. Electron, React, local Postgres.</span>
+          </div>
+        </li>
+        <li class="row" data-ascii="CANTEEN" data-alt="Smart Canteen">
+          <a class="row__link" href="https://github.com/pythonhack000/canteen-mobile">
+            <span class="row__port">19000/tcp</span><span class="row__state">open</span>
+            <span class="row__name">smart-canteen</span>
+            <span class="row__ver" data-i18n="rowCanteen">Lunch ordering app for a university canteen, with bonuses and live order status. Expo, React Native, Supabase.</span>
           </a>
         </li>
         <li class="row" data-shot="img/work-bozor-hero.jpg" data-alt="AccBozor: a marketplace for game accounts">
@@ -126,11 +175,11 @@
             <span class="row__ver" data-i18n="rowBozor">Game and Steam account marketplace for Tajikistan. Escrow holds the money until the buyer confirms. Next.js, Supabase.</span>
           </a>
         </li>
-        <li class="row" data-shot="img/work-gym.jpg" data-alt="FLEX: one membership for many gyms in Dushanbe">
-          <a class="row__link" href="https://pythonhack000.github.io/gym/">
-            <span class="row__port">3000/tcp</span><span class="row__state">open</span>
-            <span class="row__name">flex</span>
-            <span class="row__ver" data-i18n="rowFlex">One pay-per-visit pass for gyms across Dushanbe. Landing page, clickable app and the pricing research behind it.</span>
+        <li class="row" data-ascii="BYSABR" data-alt="bysabr">
+          <a class="row__link" href="https://pythonhack000.github.io/bysabr-shop/">
+            <span class="row__port">4242/tcp</span><span class="row__state">open</span>
+            <span class="row__name">bysabr</span>
+            <span class="row__ver" data-i18n="rowSabr">Fashion store with catalog, checkout and an admin panel that syncs across devices. JavaScript, Supabase.</span>
           </a>
         </li>
         <li class="row" data-shot="img/work-takhtabozor.jpg" data-alt="Takhtabozor: stock and debts for a timber yard">
@@ -140,18 +189,11 @@
             <span class="row__ver" data-i18n="rowTakhta">Stock, sales and customer debts for a timber yard, counted in somoni. React, Vite, Tailwind.</span>
           </a>
         </li>
-        <li class="row" data-ascii="BYSABR" data-alt="bysabr">
-          <a class="row__link" href="https://pythonhack000.github.io/bysabr-shop/">
-            <span class="row__port">4242/tcp</span><span class="row__state">open</span>
-            <span class="row__name">bysabr</span>
-            <span class="row__ver" data-i18n="rowSabr">Fashion store with catalog, checkout and an admin panel that syncs across devices. JavaScript, Supabase.</span>
-          </a>
-        </li>
-        <li class="row" data-ascii="CANTEEN" data-alt="Smart Canteen">
-          <a class="row__link" href="https://github.com/pythonhack000/canteen-mobile">
-            <span class="row__port">19000/tcp</span><span class="row__state">open</span>
-            <span class="row__name">smart-canteen</span>
-            <span class="row__ver" data-i18n="rowCanteen">Lunch ordering app for a university canteen, with bonuses and live order status. Expo, React Native, Supabase.</span>
+        <li class="row" data-shot="img/work-gym.jpg" data-alt="FLEX: one membership for many gyms in Dushanbe">
+          <a class="row__link" href="https://pythonhack000.github.io/gym/">
+            <span class="row__port">3000/tcp</span><span class="row__state">open</span>
+            <span class="row__name">flex</span>
+            <span class="row__ver" data-i18n="rowFlex">One pay-per-visit pass for gyms across Dushanbe. Landing page, clickable app and the pricing research behind it.</span>
           </a>
         </li>
         <li class="row" data-ascii="SIGNAL" data-alt="TradeSignal bot">
@@ -207,7 +249,7 @@
           <div><dt>Host</dt><dd data-i18n="neoHost">DII, computer science student</dd></div>
           <div><dt>Uptime</dt><dd data-i18n="neoUptime">shipping since 2021</dd></div>
           <div><dt>Space</dt><dd data-i18n="neoSpace">NASA Space Apps 2026, team Swarm</dd></div>
-          <div><dt>Packages</dt><dd data-i18n="neoPkgs">10 projects shipped</dd></div>
+          <div><dt>Packages</dt><dd data-i18n="neoPkgs">15 projects shipped</dd></div>
           <div><dt>Shell</dt><dd>TypeScript, Python, C, C++, Dart</dd></div>
           <div><dt>Frontend</dt><dd>React, Next.js, Vite, Tailwind, Flutter</dd></div>
           <div><dt>Backend</dt><dd>Supabase, PostgreSQL, Flask, REST, WebSockets</dd></div>
