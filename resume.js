@@ -23,7 +23,7 @@
       ['Store POS', 'Desktop till, stock and manager for a shop in Dushanbe, replacing three Windows programs.', 'Electron, React, PostgreSQL', null],
       ['TRADEBOARD', 'AI draws trendlines and zones on a live chart while it explains them.', 'React, TypeScript, four AI providers', 'https://pythonhack000.github.io/tradevision/'],
       ['AccBozor', 'Game and Steam account marketplace for Tajikistan. Escrow holds the money until the buyer confirms.', 'Next.js, Supabase', 'https://pythonhack000.github.io/bozor/'],
-      ['Smart Canteen', 'Lunch ordering app for a university canteen, with bonuses and live order status.', 'Expo, React Native, Supabase', 'https://github.com/pythonhack000/canteen-mobile'],
+      ['Smart Canteen', 'Lunch ordering app for a university canteen, with bonuses and live order status.', 'Expo, React Native, Supabase', null],
       ['BYSABR', 'Fashion store with catalog, checkout and an admin panel that syncs across devices.', 'JavaScript, Supabase', 'https://pythonhack000.github.io/bysabr-shop/'],
       ['Takhtabozor', 'Stock, sales and customer debts for a timber yard, counted in somoni.', 'React, Vite, Tailwind', 'https://pythonhack000.github.io/takhtabozor/'],
       ['Flex', 'One pay-per-visit pass for gyms across Dushanbe: landing page, clickable app and the pricing research behind it.', 'Product, research, web', 'https://pythonhack000.github.io/gym/'],

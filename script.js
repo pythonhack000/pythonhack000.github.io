@@ -28,7 +28,7 @@
     { name: 'answering-machine', what: 'call screening with a brain', url: 'https://pythonhack000.github.io/answering-machine/' },
     { name: 'tradeboard', what: 'AI draws on a live trading chart', url: 'https://pythonhack000.github.io/tradevision/' },
     { name: 'store-pos', what: 'desktop till and stock for a shop, Electron', url: null },
-    { name: 'smart-canteen', what: 'canteen ordering app, Expo', url: 'https://github.com/pythonhack000/canteen-mobile' },
+    { name: 'smart-canteen', what: 'canteen ordering app, Expo', url: null },
     { name: 'accbozor', what: 'game account marketplace with escrow', url: 'https://pythonhack000.github.io/bozor/' },
     { name: 'bysabr', what: 'fashion store with an admin panel', url: 'https://pythonhack000.github.io/bysabr-shop/' },
     { name: 'takhtabozor', what: 'stock and debts for a timber yard', url: 'https://pythonhack000.github.io/takhtabozor/' },
