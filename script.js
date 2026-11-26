@@ -171,6 +171,26 @@
   });
   if (rows[0]) showPing(rows[0]);
 
+  /* nine ports stay folded until asked for, the way nmap says "Not shown" */
+  const scanEl = document.querySelector('.scan');
+  const moreBtn = document.getElementById('scanMore');
+  function setExpanded(open) {
+    scanEl.classList.toggle('is-all', open);
+    moreBtn.setAttribute('aria-expanded', String(open));
+  }
+  if (scanEl && moreBtn) {
+    moreBtn.addEventListener('click', () => {
+      const open = !scanEl.classList.contains('is-all');
+      setExpanded(open);
+      if (open) {
+        rows.find((r) => r.classList.contains('row--more'))?.querySelector('.row__link')?.focus({ preventScroll: true });
+        return;
+      }
+      if (rows.find((r) => r.classList.contains('is-on'))?.classList.contains('row--more')) setActive(rows[0]);
+      document.getElementById('work')?.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+    });
+  }
+
   /* the scan: when /work comes into view, check every live port for real */
   const uptime = document.getElementById('uptime');
   const uptimeText = document.getElementById('uptimeText');

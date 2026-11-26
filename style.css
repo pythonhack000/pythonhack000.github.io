@@ -164,6 +164,15 @@ main > section { max-width: var(--max); margin: 0 auto; padding: 0 var(--gut); }
 .row.is-on .row__port, .row.is-on .row__state, .row.is-on .row__name, .row.is-on .row__ver { color: var(--void); }
 .row.is-on .row__ver { max-height: 320px; margin-top: 6px; }
 .row.is-on .row__name::after { content: " _"; animation: blink 1s steps(1) infinite; }
+.scan:not(.is-all) .row--more, .scan:not(.is-all) .when-all, .scan.is-all .when-top { display: none; }
+.scan.is-all .row--more { animation: row-in .3s ease both; animation-delay: calc(var(--n, 0) * 40ms); }
+@keyframes row-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.scan__more { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 12px; color: var(--amber-dim); font-size: 14px; }
+.scan__more-btn { font: inherit; font-size: 14px; color: var(--amber); background: none; border: 1px solid var(--line); padding: 8px 14px; cursor: pointer; transition: background .15s, color .15s; }
+.scan__more-btn::before { content: "$ "; color: var(--amber-dim); }
+.scan__more-btn:hover, .scan__more-btn:focus-visible { background: var(--amber); color: var(--void); outline: none; }
+.scan__more-btn:hover::before, .scan__more-btn:focus-visible::before { color: var(--void); }
+@media (prefers-reduced-motion: reduce) { .scan.is-all .row--more { animation: none; } }
 
 .screen { margin: 0; }
 .screen__crt {
